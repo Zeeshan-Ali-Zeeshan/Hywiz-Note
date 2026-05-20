@@ -4,10 +4,236 @@
   unicode-bidi: plaintext !important;
 }
 
+/* Font Size Classes - Deep Overrides for index.css conflicts */
+.editor-font-small .ProseMirror,
+.editor-font-small [contenteditable="true"],
+.editor-font-small .ProseMirror p,
+.editor-font-small [contenteditable="true"] p,
+.editor-font-small .ProseMirror li,
+.editor-font-small [contenteditable="true"] li {
+  font-size: 12px !important;
+}
+
+.editor-font-medium .ProseMirror,
+.editor-font-medium [contenteditable="true"],
+.editor-font-medium .ProseMirror p,
+.editor-font-medium [contenteditable="true"] p,
+.editor-font-medium .ProseMirror li,
+.editor-font-medium [contenteditable="true"] li {
+  font-size: 14px !important;
+}
+
+.editor-font-large .ProseMirror,
+.editor-font-large [contenteditable="true"],
+.editor-font-large .ProseMirror p,
+.editor-font-large [contenteditable="true"] p,
+.editor-font-large .ProseMirror li,
+.editor-font-large [contenteditable="true"] li {
+  font-size: 16px !important;
+}
+
+/* Layout Style Classes - Deep Overrides */
+.editor-layout-comfortable .ProseMirror,
+.editor-layout-comfortable [contenteditable="true"] {
+  padding: 1.5rem !important;
+  line-height: 1.65 !important;
+}
+
+.editor-layout-comfortable .ProseMirror p,
+.editor-layout-comfortable [contenteditable="true"] p {
+  line-height: 1.65 !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.editor-layout-compact .ProseMirror,
+.editor-layout-compact [contenteditable="true"] {
+  padding: 0.75rem !important;
+  line-height: 1.4 !important;
+}
+
+.editor-layout-compact .ProseMirror p,
+.editor-layout-compact [contenteditable="true"] p {
+  line-height: 1.4 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.editor-layout-spacious .ProseMirror,
+.editor-layout-spacious [contenteditable="true"] {
+  padding: 2.5rem !important;
+  line-height: 1.8 !important;
+}
+
+.editor-layout-spacious .ProseMirror p,
+.editor-layout-spacious [contenteditable="true"] p {
+  line-height: 1.8 !important;
+  margin-bottom: 1.25rem !important;
+}
+
+/* Default editor text baseline (allow inline color marks to override) */
+.ProseMirror {
+  color: #111827;
+  /* gray-900 */
+}
+
+/* Force dark text for all toolbar buttons/icons in light theme */
+.editor-toolbar {
+  color: #111827 !important;
+  /* gray-900 */
+}
+
+.editor-toolbar button,
+.editor-toolbar [role="button"] {
+  color: inherit !important;
+}
+
+.editor-toolbar svg {
+  color: inherit !important;
+}
+
+/* Light theme content baseline (do not override inline color marks) */
+:root[data-theme="light"] .ProseMirror,
+:root[data-theme="light"] .ProseMirror p:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror li:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror span:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror div:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror h1:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror h2:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror h3:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror h4:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror h5:not([style*="color"]),
+:root[data-theme="light"] .ProseMirror h6:not([style*="color"]) {
+  color: #111827;
+}
+
+/* Lists and checklists */
+:root[data-theme="light"] .ProseMirror ul,
+:root[data-theme="light"] .ProseMirror ol {
+  color: #111827 !important;
+}
+
+:root[data-theme="light"] .ProseMirror li::marker {
+  color: #6b7280;
+  /* gray-500 marker */
+}
+
+:root[data-theme="light"] .ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+:root[data-theme="light"] .ProseMirror ul[data-type="taskList"] li,
+:root[data-theme="light"] .ProseMirror ul[data-type="taskList"] label {
+  color: #111827 !important;
+}
+
+:root[data-theme="light"] .ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  accent-color: #111827;
+}
+
+/* Light theme: readable code and blockquotes */
+:root[data-theme="light"] .ProseMirror pre,
+:root[data-theme="light"] .ProseMirror code {
+  background: #f9fafb !important;
+  /* gray-50 */
+  color: #111827 !important;
+  /* gray-900 */
+  border-radius: 6px;
+}
+
+:root[data-theme="light"] .ProseMirror blockquote {
+  background: #f9fafb !important;
+  color: #111827 !important;
+  border-left: 4px solid #3b82f6 !important;
+  padding: 0.5em 1em;
+  border-radius: 4px;
+}
+
+/* Do NOT override explicit inline colors from color picker */
+/* If you need to prevent white-on-white, handle via background highlight instead */
+
+/* Tables default to light unless a cell explicitly carries a background-color */
+:root[data-theme="light"] .ProseMirror table th:not([style*="background-color"]),
+:root[data-theme="light"] .ProseMirror table td:not([style*="background-color"]) {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #282828 !important;
+}
+
+/* In light theme, table headers default to light if no inline background OR override legacy dark inline backgrounds */
+:root[data-theme="light"] .ProseMirror table th:not([style*="background-color"]) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #282828 !important;
+}
+
+/* Light theme: Allow dark color variants for table headers (dark blues, grays, blacks) */
+:root[data-theme="light"] .ProseMirror table th[style*="background-color:#232323"],
+:root[data-theme="light"] .ProseMirror table th[style*="background-color: #232323"],
+:root[data-theme="light"] .ProseMirror table th[style*="background-color:#181818"],
+:root[data-theme="light"] .ProseMirror table th[style*="background-color: #181818"],
+:root[data-theme="light"] .ProseMirror table th[style*="background-color:rgb(35,35,35)"],
+:root[data-theme="light"] .ProseMirror table th[style*="background-color: rgb(35, 35, 35)"],
+:root[data-theme="light"] .ProseMirror table th[style*="background-color:rgb(24,24,24)"],
+:root[data-theme="light"] .ProseMirror table th[style*="background-color: rgb(24, 24, 24)"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:#232323"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #232323"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:#181818"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #181818"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:#202124"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #202124"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:#23272B"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #23272B"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:#333"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #333"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:#353A40"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #353A40"] {
+  /* Light theme gets dark variants - keep the dark colors */
+  color: #ffffff !important;
+  /* White text for dark backgrounds */
+  border-color: #282828 !important;
+}
+
+/* Light theme: Allow black shades for table headers */
+:root[data-theme="light"] .ProseMirror table th[style*="background:#000"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #000"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:#111"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #111"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:#222"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: #222"],
+:root[data-theme="light"] .ProseMirror table th[style*="background:rgb(0,0,0)"],
+:root[data-theme="light"] .ProseMirror table th[style*="background: rgb(0, 0, 0)"] {
+  /* Light theme gets dark variants - keep the dark colors */
+  color: #ffffff !important;
+  /* White text for dark backgrounds */
+  border-color: #e5e7eb !important;
+}
+
+:root[data-theme="light"] .ProseMirror table th>* {
+  color: inherit !important;
+}
+
+/* Light theme: Allow inline backgrounds for header contents */
+/* (No overrides needed; inline styles will naturally apply) */
+
+/* Light theme table headers - only apply when no custom background is set */
+:root[data-theme="light"] .ProseMirror table thead th:not([style*="background"]):not([style*="background-color"]),
+:root[data-theme="light"] .ProseMirror table th:not([style*="background"]):not([style*="background-color"]) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+
+:root[data-theme="light"] .ProseMirror table,
+:root[data-theme="light"] .ProseMirror table th,
+:root[data-theme="light"] .ProseMirror table td {
+  border-color: #282828 !important;
+}
+
 .ProseMirror h1:first-child {
   font-size: 2.5rem !important;
   font-weight: 700 !important;
-  color: #bcbcbc !important;
+  color: #111827 !important;
   margin-bottom: 1.5rem !important;
 }
 
@@ -18,21 +244,137 @@
   pointer-events: none;
 }
 
-/* Table styles with physical block chevron support */
+/* Table wrapper - Enhanced scroll functionality */
+.ProseMirror .tableWrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1rem 0;
+  /* Enable smooth scrolling for better user experience */
+  scroll-behavior: smooth;
+  /* Remove contain property that can interfere with scrolling */
+  /* Better width utilization */
+  width: 100%;
+  max-width: 100%;
+  /* Hardware acceleration for better scroll performance */
+  will-change: scroll-position;
+  /* Momentum scrolling for touch devices */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Attempt to restore scroll position using CSS custom properties */
+/* Attempt to restore scroll position using CSS custom properties */
+/* .ProseMirror .tableWrapper[style*="--scroll-left"] { } */
+
+/* Removed all scroll optimizations - let browser handle naturally */
+
+/* Custom scrollbar styling for better appearance */
+.ProseMirror .tableWrapper::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.ProseMirror .tableWrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.ProseMirror .tableWrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.ProseMirror .tableWrapper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Table sizing - MINIMAL TEST */
+.ProseMirror .tableWrapper table {
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+}
+
+/* Fixed cell sizing - Proper column resizing behavior */
+.ProseMirror table td,
+.ProseMirror table th {
+  /* Fixed layout cell sizing */
+  min-width: 120px;
+  /* Reasonable minimum for readability */
+  width: 120px;
+  /* Explicit width required for table-layout: fixed */
+  /* Ensure cells don't get too cramped */
+  padding: 8px 12px;
+  /* Prevent content overflow - Handle long content gracefully */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Table styles with proper column resizing behavior */
 .ProseMirror table {
   border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
   margin: 0;
-  overflow: hidden;
+  display: table;
+  position: relative;
+  /* Enable proper column resizing - Table grows/shrinks instead of affecting other columns */
 }
 
 .ProseMirror table th,
 .ProseMirror table td {
-  background-color: #232323;
-  color: #fff;
-  border: 1.5px solid #333;
-  min-width: 1em;
+  /* Re-enable pointer events for cell interactions */
+  pointer-events: auto;
+  /* Ensure cells don't interfere with scroll */
+  user-select: text;
+  /* Prevent text selection from interfering with scroll */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+/* Ensure table content doesn't interfere with scroll behavior */
+.ProseMirror table th *,
+.ProseMirror table td * {
+  /* Allow text selection within cells */
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  /* Prevent content from interfering with scroll */
+  pointer-events: auto;
+}
+
+/* Wrapper to make the whole row (full editor width) the scroll hit-area - Basic functionality */
+.pm-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Basic scroll functionality */
+  scroll-behavior: auto;
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.pm-table-scroll>table {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
+}
+
+.ProseMirror table th,
+.ProseMirror table td {
+  background-color: #ffffff;
+  /* white */
+  color: #111827;
+  /* gray-900 */
+  border: 1.5px solid #e5e7eb;
+  /* gray-200 */
+  min-width: 120px;
+  /* Ensure cells are wide enough */
   min-height: 3.5em !important;
   height: 3.5em !important;
   margin: 0;
@@ -44,10 +386,28 @@
   padding-top: 9px !important;
   padding-bottom: 9px !important;
   line-height: 1.7 !important;
+  white-space: nowrap;
+  /* prevent wrapping so horizontal overflow appears */
 }
 
-.ProseMirror table th > *,
-.ProseMirror table td > * {
+/* Black theme: ensure table cells follow dark styling but allow inline overrides */
+:root[data-theme="black"] .ProseMirror table,
+:root[data-theme="black"] .ProseMirror table th,
+:root[data-theme="black"] .ProseMirror table td {
+  background-color: #242424;
+  color: #ffffff !important;
+  border-color: #3a3a3a;
+}
+
+/* Removed previous override that forced inherit on inline background-color; inline styles will now win. */
+
+:root[data-theme="black"] .ProseMirror table th>*,
+:root[data-theme="black"] .ProseMirror table td>* {
+  color: #ffffff !important;
+}
+
+.ProseMirror table th>*,
+.ProseMirror table td>* {
   line-height: 1.7 !important;
   min-height: 2em !important;
 }
@@ -66,27 +426,114 @@
   z-index: 2;
   position: absolute;
   content: "";
-  left: 0; right: 0; top: 0; bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
   background: rgba(200, 200, 255, 0.4);
   pointer-events: none;
 }
 
 .ProseMirror table .column-resize-handle {
   position: absolute;
-  right: -2px;
+  right: 0;
+  /* keep inside cell */
   top: 0;
-  bottom: -2px;
-  width: 4px;
+  bottom: 0;
+  width: 2px;
   background-color: #adf;
   pointer-events: none;
 }
 
-/* Physical block chevron styles */
+/* Native inline table button styles - positioned in right-center */
+.inline-table-button {
+  position: absolute !important;
+  top: 50% !important;
+  right: 8px !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  background: rgba(0, 0, 0, 0.15) !important;
+  /* Light theme: dark glassy effect */
+  backdrop-filter: blur(10px) !important;
+  /* blur the background behind */
+  -webkit-backdrop-filter: blur(10px) !important;
+  /* for Safari */
+  border: 1px solid rgba(0, 0, 0, 0.25) !important;
+  /* Light theme: dark border */
+  cursor: pointer !important;
+  color: #000000 !important;
+  /* Light theme: BLACK chevron for dark background */
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  font-size: 12px !important;
+  z-index: 5 !important;
+}
+
+.inline-table-button:hover {
+  transform: translateY(-50%) scale(1.1) !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+  /* Light theme: darker on hover */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Ensure table cells have relative positioning */
+.ProseMirror table td,
+.ProseMirror table th {
+  position: relative !important;
+}
+
+.inline-table-button svg {
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  color: inherit !important;
+  pointer-events: none !important;
+}
+
+/* Dark theme support */
+[data-theme="dark"] .inline-table-button {
+  background: rgba(255, 255, 255, 0.2) !important;
+  /* Dark theme: light glassy effect */
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  /* Dark theme: light border */
+  color: #111827 !important;
+  /* Dark theme: dark chevron for light background */
+}
+
+[data-theme="dark"] .inline-table-button:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  /* Dark theme: lighter on hover */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Black theme support */
+[data-theme="black"] .inline-table-button {
+  background: rgba(255, 255, 255, 0.25) !important;
+  /* Black theme: light glassy effect */
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  /* Black theme: light border */
+  color: #ffffff !important;
+  /* Black theme: WHITE chevron for light background */
+}
+
+[data-theme="black"] .inline-table-button:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+  /* Black theme: lighter on hover */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Legacy block chevron styles */
 .table-chevron-block {
   position: fixed !important;
   width: 28px !important;
   height: 28px !important;
-  background: rgba(30,30,30,0.7) !important;
+  background: rgba(30, 30, 30, 0.7) !important;
   border-radius: 6px !important;
   display: flex !important;
   align-items: center !important;
@@ -99,8 +546,8 @@
 }
 
 .table-chevron-block:hover {
-  background: rgba(60,60,60,0.85) !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+  background: rgba(60, 60, 60, 0.85) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Cell dropdown styles */
@@ -113,8 +560,8 @@
   position: absolute;
   top: 2px;
   right: 2px;
-  background: #333;
-  color: white;
+  background: #f3f4f6;
+  color: #111827;
   border: none;
   border-radius: 3px;
   width: 20px;
@@ -134,14 +581,22 @@
   position: absolute;
   top: 100%;
   right: 0;
-  background: #232323;
-  border: 1px solid #444;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
   padding: 8px;
   min-width: 150px;
   display: none;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Black theme: table cell dropdown menu */
+:root[data-theme="black"] .cell-dropdown-menu {
+  background: #242424 !important;
+  color: #ffffff !important;
+  border-color: #3a3a3a !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
 }
 
 .cell-dropdown-menu button {
@@ -150,7 +605,7 @@
   text-align: left;
   background: none;
   border: none;
-  color: white;
+  color: #111827;
   padding: 4px 8px;
   cursor: pointer;
   font-size: 12px;
@@ -158,8 +613,26 @@
   transition: background-color 0.2s;
 }
 
+:root[data-theme="black"] .cell-dropdown-menu button {
+  color: #e5e5e5 !important;
+}
+
 .cell-dropdown-menu button:hover {
   background-color: #444;
+}
+
+:root[data-theme="black"] .cell-dropdown-menu button:hover {
+  background-color: #2a2a2a !important;
+}
+
+/* Small dropdown button that appears inside table cells */
+:root[data-theme="black"] .cell-dropdown-button {
+  background: #2f2f2f !important;
+  color: #e5e5e5 !important;
+}
+
+:root[data-theme="black"] .cell-dropdown-button:hover {
+  background: #3a3a3a !important;
 }
 
 /* Color palette styles */
@@ -179,12 +652,12 @@
   border: 2px solid #666;
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s;
-  box-shadow: 0 0 0 rgba(0,0,0,0);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .color-dot:hover {
   transform: scale(1.35);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
 /* Ensure lists are visible in the editor */
@@ -192,31 +665,117 @@
   list-style-type: disc;
   margin-left: 1.5em;
 }
+
 .ProseMirror ol {
   list-style-type: decimal;
   margin-left: 1.5em;
 }
 
-/* Only force white for headings, strong, b, and label, but allow override by inline styles or color pickers */
-.ProseMirror h1,
-.ProseMirror h2,
-.ProseMirror h3,
-.ProseMirror h4,
-.ProseMirror h5,
-.ProseMirror h6,
-.ProseMirror strong,
-.ProseMirror b,
-.ProseMirror label,
-[contenteditable="true"] h1,
-[contenteditable="true"] h2,
-[contenteditable="true"] h3,
-[contenteditable="true"] h4,
-[contenteditable="true"] h5,
-[contenteditable="true"] h6,
-[contenteditable="true"] strong,
-[contenteditable="true"] b,
-[contenteditable="true"] label {
-  color: #fff;
+/* Ensure table cell colors are visible and not affected by button styling */
+.ProseMirror table td,
+.ProseMirror table th {
+  position: relative !important;
+  z-index: 8 !important;
+}
+
+.ProseMirror table td[style*="background-color"],
+.ProseMirror table th[style*="background-color"] {
+  z-index: 9 !important;
+}
+
+/* Headings and emphasis default color, but respect inline color styles from picker */
+.ProseMirror {
+  font-size: 12px !important;
+  /* Smaller base body size */
+  line-height: 1.65 !important;
+}
+
+.ProseMirror p {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+.ProseMirror h1 {
+  font-size: 1.35rem !important;
+  /* ~21.6px */
+  line-height: 1.3 !important;
+}
+
+.ProseMirror h2 {
+  font-size: 1.125rem !important;
+  /* ~18px */
+  line-height: 1.35 !important;
+}
+
+.ProseMirror h3 {
+  font-size: 1rem !important;
+  /* 16px */
+  line-height: 1.4 !important;
+}
+
+@media (min-width: 1536px) {
+
+  /* Slightly larger on very wide screens */
+  .ProseMirror {
+    font-size: 10px !important;
+  }
+
+  .ProseMirror h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .ProseMirror h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .ProseMirror h3 {
+    font-size: 1.1rem !important;
+  }
+}
+
+.ProseMirror h1:not([style*="color"]),
+.ProseMirror h2:not([style*="color"]),
+.ProseMirror h3:not([style*="color"]),
+.ProseMirror h4:not([style*="color"]),
+.ProseMirror h5:not([style*="color"]),
+.ProseMirror h6:not([style*="color"]),
+.ProseMirror strong:not([style*="color"]),
+.ProseMirror b:not([style*="color"]),
+.ProseMirror label:not([style*="color"]),
+[contenteditable="true"] h1:not([style*="color"]),
+[contenteditable="true"] h2:not([style*="color"]),
+[contenteditable="true"] h3:not([style*="color"]),
+[contenteditable="true"] h4:not([style*="color"]),
+[contenteditable="true"] h5:not([style*="color"]),
+[contenteditable="true"] h6:not([style*="color"]),
+[contenteditable="true"] strong:not([style*="color"]),
+[contenteditable="true"] b:not([style*="color"]),
+[contenteditable="true"] label:not([style*="color"]) {
+  color: #111827;
+}
+
+/* Black theme: base content and headings without inline color should be white */
+:root[data-theme="black"] .ProseMirror:not(.task-item),
+:root[data-theme="black"] .ProseMirror p:not([style*="color"]):not(.task-item p),
+:root[data-theme="black"] .ProseMirror li:not([style*="color"]):not(.task-item li),
+:root[data-theme="black"] .ProseMirror span:not([style*="color"]):not(.task-item span),
+:root[data-theme="black"] .ProseMirror div:not([style*="color"]):not(.task-item div),
+:root[data-theme="black"] .ProseMirror h1:not([style*="color"]):not(.task-item h1),
+:root[data-theme="black"] .ProseMirror h2:not([style*="color"]):not(.task-item h2),
+:root[data-theme="black"] .ProseMirror h3:not([style*="color"]):not(.task-item h3),
+:root[data-theme="black"] .ProseMirror h4:not([style*="color"]):not(.task-item h4),
+:root[data-theme="black"] .ProseMirror h5:not([style*="color"]):not(.task-item h5),
+:root[data-theme="black"] .ProseMirror h6:not([style*="color"]):not(.task-item h6) {
+  color: #ffffff !important;
+}
+
+:root[data-theme="black"] .ProseMirror ul,
+:root[data-theme="black"] .ProseMirror ol {
+  color: #ffffff !important;
+}
+
+:root[data-theme="black"] .ProseMirror li::marker {
+  color: #a3a3a3 !important;
 }
 
 /* Force all common inline tags to inherit color from parent, even if overridden elsewhere */
@@ -276,13 +835,21 @@
   top: 32px;
   right: 4px;
   min-width: 120px;
-  background: #232323;
-  color: #fff;
-  border: 1px solid #444;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   z-index: 100;
   padding: 8px 0;
+}
+
+/* Black theme: alternate table-cell dropdown container */
+:root[data-theme="black"] .table-cell-dropdown {
+  background: #242424 !important;
+  color: #ffffff !important;
+  border-color: #3a3a3a !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
 }
 
 .ProseMirror td:hover .table-cell-dropdown,
@@ -295,7 +862,7 @@
   width: 100%;
   background: none;
   border: none;
-  color: #fff;
+  color: #111827;
   padding: 8px 16px;
   text-align: left;
   cursor: pointer;
@@ -311,4 +878,231 @@
 /* Hide TipTap/Yjs collaborative cursor labels */
 .collaboration-cursor__label {
   display: none !important;
+}
+
+/* Fix color picker SVG blurriness without replacing markup */
+.editor-toolbar [title="Text Color"] svg {
+  /* Improve geometric precision and avoid raster blurring */
+  shape-rendering: geometricPrecision;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.editor-toolbar [title="Text Color"] svg circle {
+  /* Keep stroke width crisp when the icon is scaled in its 20px container */
+  vector-effect: non-scaling-stroke;
+}
+
+/* Ensure toolbar dropdowns are visible above everything */
+.editor-toolbar .dropdown-container {
+  position: relative;
+  z-index: 9999;
+}
+
+.editor-toolbar .dropdown-container>div[class*="absolute"] {
+  z-index: 9999 !important;
+}
+
+/* Prevent dropdown clipping */
+.editor-toolbar {
+  overflow: visible !important;
+}
+
+.editor-toolbar .relative {
+  overflow: visible !important;
+}
+
+/* Image styles in editor - ensure images display properly */
+.ProseMirror .editor-image,
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  display: block !important;
+  /* Force block display for proper rendering */
+  margin: 1rem auto !important;
+  /* Center images with auto margins */
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  object-fit: contain;
+}
+
+/* Ensure images are visible */
+.ProseMirror img[src],
+.ProseMirror .editor-image[src] {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.ProseMirror .editor-image:hover,
+.ProseMirror img:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure images are visible in all themes */
+:root[data-theme="black"] .ProseMirror img,
+:root[data-theme="dark"] .ProseMirror img {
+  opacity: 1;
+}
+
+/* Link Styles - Make them more specific and ensure they work */
+.ProseMirror a,
+.ProseMirror .link,
+[contenteditable="true"] a,
+[contenteditable="true"] .link {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+  text-decoration-color: #93c5fd !important;
+  text-underline-offset: 2px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.ProseMirror a:hover,
+.ProseMirror .link:hover,
+[contenteditable="true"] a:hover,
+[contenteditable="true"] .link:hover {
+  color: #1d4ed8 !important;
+  text-decoration-color: #3b82f6 !important;
+}
+
+.link[data-mask-text] {
+  position: relative;
+}
+
+
+.link[data-mask-text]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: #1f2937;
+  margin-bottom: 0;
+}
+
+/* Internal link indicators */
+.ProseMirror a[href^="note://"],
+.ProseMirror .link[href^="note://"],
+[contenteditable="true"] a[href^="note://"],
+[contenteditable="true"] .link[href^="note://"] {
+  color: #059669 !important;
+  text-decoration-color: #6ee7b7 !important;
+}
+
+.ProseMirror a[href^="note://"]:hover,
+.ProseMirror .link[href^="note://"]:hover,
+[contenteditable="true"] a[href^="note://"]:hover,
+[contenteditable="true"] .link[href^="note://"]:hover {
+  color: #047857 !important;
+  text-decoration-color: #10b981 !important;
+}
+
+.ProseMirror a[href^="template://"],
+.ProseMirror .link[href^="template://"],
+[contenteditable="true"] a[href^="template://"],
+[contenteditable="true"] .link[href^="template://"] {
+  color: #7c3aed !important;
+  text-decoration-color: #c4b5fd !important;
+}
+
+.ProseMirror a[href^="template://"]:hover,
+.ProseMirror .link[href^="template://"]:hover,
+[contenteditable="true"] a[href^="template://"]:hover,
+[contenteditable="true"] .link[href^="template://"]:hover {
+  color: #6d28d9 !important;
+  text-decoration-color: #a78bfa !important;
+}
+
+/* External link indicators */
+.ProseMirror a[href^="http://"],
+.ProseMirror a[href^="https://"],
+.ProseMirror .link[href^="http://"],
+.ProseMirror .link[href^="https://"],
+[contenteditable="true"] a[href^="http://"],
+[contenteditable="true"] a[href^="https://"],
+[contenteditable="true"] .link[href^="http://"],
+[contenteditable="true"] .link[href^="https://"] {
+  position: relative;
+}
+
+
+.ProseMirror a[href^="mailto:"],
+.ProseMirror .link[href^="mailto:"],
+[contenteditable="true"] a[href^="mailto:"],
+[contenteditable="true"] .link[href^="mailto:"] {
+  color: #dc2626 !important;
+  text-decoration-color: #fca5a5 !important;
+}
+
+.ProseMirror a[href^="mailto:"]:hover,
+.ProseMirror .link[href^="mailto:"]:hover,
+[contenteditable="true"] a[href^="mailto:"]:hover,
+[contenteditable="true"] .link[href^="mailto:"]:hover {
+  color: #b91c1c !important;
+  text-decoration-color: #f87171 !important;
+}
+
+.ProseMirror a[href^="tel:"],
+.ProseMirror .link[href^="tel:"],
+[contenteditable="true"] a[href^="tel:"],
+[contenteditable="true"] .link[href^="tel:"] {
+  color: #059669 !important;
+  text-decoration-color: #6ee7b7 !important;
+}
+
+.ProseMirror a[href^="tel:"]:hover,
+.ProseMirror .link[href^="tel:"]:hover,
+[contenteditable="true"] a[href^="tel:"]:hover,
+[contenteditable="true"] .link[href^="tel:"]:hover {
+  color: #047857 !important;
+  text-decoration-color: #10b981 !important;
+}
+
+/* Dark theme link styles */
+:root[data-theme="dark"] .ProseMirror a,
+:root[data-theme="dark"] .ProseMirror .link,
+:root[data-theme="dark"] [contenteditable="true"] a,
+:root[data-theme="dark"] [contenteditable="true"] .link {
+  color: #60a5fa !important;
+  text-decoration-color: #3b82f6 !important;
+}
+
+:root[data-theme="dark"] .ProseMirror a:hover,
+:root[data-theme="dark"] .ProseMirror .link:hover,
+:root[data-theme="dark"] [contenteditable="true"] a:hover,
+:root[data-theme="dark"] [contenteditable="true"] .link:hover {
+  color: #93c5fd !important;
+  text-decoration-color: #60a5fa !important;
+}
+
+/* Black theme link styles */
+:root[data-theme="black"] .ProseMirror a,
+:root[data-theme="black"] .ProseMirror .link,
+:root[data-theme="black"] [contenteditable="true"] a,
+:root[data-theme="black"] [contenteditable="true"] .link {
+  color: #60a5fa !important;
+  text-decoration-color: #3b82f6 !important;
+}
+
+:root[data-theme="black"] .ProseMirror a:hover,
+:root[data-theme="black"] .ProseMirror .link:hover,
+:root[data-theme="black"] [contenteditable="true"] a:hover,
+:root[data-theme="black"] [contenteditable="true"] .link:hover {
+  color: #93c5fd !important;
+  text-decoration-color: #60a5fa !important;
+}
+
+/* ── Task item: suppress layout-driven paragraph margins ──────────────────
+   The editor-layout-* rules apply margin-bottom !important to .ProseMirror p.
+   This more-specific selector overrides that for task card content only. */
+.editor-layout-comfortable .ProseMirror .task-content-modern p,
+.editor-layout-comfortable [contenteditable="true"] .task-content-modern p,
+.editor-layout-compact .ProseMirror .task-content-modern p,
+.editor-layout-compact [contenteditable="true"] .task-content-modern p,
+.editor-layout-spacious .ProseMirror .task-content-modern p,
+.editor-layout-spacious [contenteditable="true"] .task-content-modern p,
+.ProseMirror .task-content-modern p,
+[contenteditable="true"] .task-content-modern p {
+  margin-bottom: 0 !important;
+  line-height: 1.4 !important;
 }

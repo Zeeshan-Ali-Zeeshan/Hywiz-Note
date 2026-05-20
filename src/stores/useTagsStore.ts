@@ -5,7 +5,6 @@ export interface Tag {
   _id: string;
   name: string;
   userId: string;
-  color: string;
   noteCount: number;
   description: string;
   parentTag?: string;

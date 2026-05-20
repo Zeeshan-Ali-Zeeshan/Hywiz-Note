@@ -25,13 +25,33 @@ const COLORS = [
 interface TableCellDropdownProps {
   editor: Editor;
   nodeType: 'tableCell' | 'tableHeader';
+  cellPosition?: number | null;
 }
 
-export const TableCellDropdown: React.FC<TableCellDropdownProps> = ({ editor, nodeType }) => {
+export const TableCellDropdown: React.FC<TableCellDropdownProps> = ({ editor, nodeType, cellPosition }) => {
   const selectCurrentCell = () => {
     const { view } = editor;
-    if (view.hasFocus()) return;
-    view.focus();
+    
+    // If we have a specific cell position, select that cell
+    if (cellPosition !== null && cellPosition !== undefined) {
+      console.log('[DEBUG] Selecting cell at position:', cellPosition);
+      try {
+        // Set selection to the specific cell
+        const tr = view.state.tr.setSelection(
+          view.state.selection.constructor.near(view.state.doc.resolve(cellPosition))
+        );
+        view.dispatch(tr);
+        view.focus();
+        return;
+      } catch (error) {
+        console.log('[DEBUG] Error selecting specific cell:', error);
+      }
+    }
+    
+    // Fallback to generic focus
+    if (!view.hasFocus()) {
+      view.focus();
+    }
   };
 
   const addRowAbove = () => {
@@ -212,96 +232,37 @@ export const TableCellDropdown: React.FC<TableCellDropdownProps> = ({ editor, no
 
   return (
     <div
-      style={{ 
-        minWidth: '200px',
-        background: '#1a1a1a',
-        border: '1px solid #333',
-        borderRadius: '8px',
-        padding: '10px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px'
-      }}
+      className="bg-white text-gray-900 border border-gray-200 rounded-lg shadow-xl min-w-[200px] p-2"
+      style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
     >
       {/* Table Operations Section */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ 
-          color: '#fff', 
-          fontSize: '13px', 
-          fontWeight: '600',
-          marginBottom: '3px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px'
-        }}>
+        <div className="text-gray-900 text-[13px] font-semibold mb-1 flex items-center gap-1.5">
           <Grid3X3 size={14} />
           Table Operations
         </div>
         
         {/* Row Operations */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <div style={{ color: '#ccc', fontSize: '11px', fontWeight: '500' }}>Rows</div>
+          <div className="text-gray-500 text-[11px] font-medium">Rows</div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
               onClick={addRowAbove}
-              style={{
-                background: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '4px',
-                padding: '5px 8px',
-                color: '#fff',
-                fontSize: '11px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+              className="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-2 py-1 text-[11px] flex items-center gap-1 transition-colors"
             >
               <Plus size={12} />
               Add Above
             </button>
             <button
               onClick={addRowBelow}
-              style={{
-                background: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '4px',
-                padding: '5px 8px',
-                color: '#fff',
-                fontSize: '11px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+              className="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-2 py-1 text-[11px] flex items-center gap-1 transition-colors"
             >
               <Plus size={12} />
               Add Below
             </button>
             <button
               onClick={deleteRow}
-              style={{
-                background: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '4px',
-                padding: '5px 8px',
-                color: '#ff6b6b',
-                fontSize: '11px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+              className="bg-white hover:bg-gray-100 border border-red-300 text-red-600 rounded px-2 py-1 text-[11px] flex items-center gap-1 transition-colors"
             >
               <Minus size={12} />
               Delete
@@ -311,67 +272,25 @@ export const TableCellDropdown: React.FC<TableCellDropdownProps> = ({ editor, no
 
         {/* Column Operations */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <div style={{ color: '#ccc', fontSize: '11px', fontWeight: '500' }}>Columns</div>
+          <div className="text-gray-500 text-[11px] font-medium">Columns</div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
               onClick={addColumnBefore}
-              style={{
-                background: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '4px',
-                padding: '5px 8px',
-                color: '#fff',
-                fontSize: '11px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+              className="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-2 py-1 text-[11px] flex items-center gap-1 transition-colors"
             >
               <Plus size={12} />
               Add Left
             </button>
             <button
               onClick={addColumnAfter}
-              style={{
-                background: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '4px',
-                padding: '5px 8px',
-                color: '#fff',
-                fontSize: '11px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+              className="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-2 py-1 text-[11px] flex items-center gap-1 transition-colors"
             >
               <Plus size={12} />
               Add Right
             </button>
             <button
               onClick={deleteColumn}
-              style={{
-                background: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '4px',
-                padding: '5px 8px',
-                color: '#ff6b6b',
-                fontSize: '11px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+              className="bg-white hover:bg-gray-100 border border-red-300 text-red-600 rounded px-2 py-1 text-[11px] flex items-center gap-1 transition-colors"
             >
               <Minus size={12} />
               Delete
@@ -380,30 +299,10 @@ export const TableCellDropdown: React.FC<TableCellDropdownProps> = ({ editor, no
         </div>
 
         {/* Delete Table */}
-        <div style={{ 
-          borderTop: '1px solid #333', 
-          paddingTop: '10px',
-          marginTop: '6px'
-        }}>
+        <div className="border-t border-gray-200 pt-2 mt-1.5">
           <button
             onClick={deleteTable}
-            style={{
-              background: '#2a2a2a',
-              border: '1px solid #ff4444',
-              borderRadius: '4px',
-              padding: '6px 10px',
-              color: '#ff6b6b',
-              fontSize: '11px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'background 0.2s',
-              width: '100%',
-              justifyContent: 'center'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+            className="bg-white hover:bg-gray-100 border border-red-300 text-red-600 rounded px-2 py-1 text-[11px] flex items-center gap-1 transition-colors w-full justify-center"
           >
             <Trash2 size={14} />
             Delete Table
@@ -412,56 +311,85 @@ export const TableCellDropdown: React.FC<TableCellDropdownProps> = ({ editor, no
       </div>
 
       {/* Color Palette Section */}
-      <div style={{ 
-        borderTop: '1px solid #333', 
-        paddingTop: '12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px'
-      }}>
-        <div style={{ 
-          color: '#fff', 
-          fontSize: '13px', 
-          fontWeight: '600',
-          marginBottom: '3px'
-        }}>
+      <div className="border-t border-gray-200 pt-3 flex flex-col gap-2.5">
+        <div className="text-gray-900 text-[13px] font-semibold mb-1">
           Cell Background
         </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(9, 1fr)',
-          gap: '5px',
-          padding: '6px 0'
-        }}>
-        {COLORS.map(color => (
-            <div
-            key={color}
-              style={{ 
-                backgroundColor: color,
-                width: '22px',
-                height: '22px',
-                borderRadius: '50%',
-                border: '2px solid #666',
-                cursor: 'pointer',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
+        <div className="mb-1.5">
+          <button
+            className="flex items-center gap-1 w-full px-1.5 py-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white text-xs hover:bg-gray-50"
+            title="Auto (theme)"
             onClick={e => {
               e.stopPropagation();
               e.preventDefault();
+              console.log('[DEBUG] Removing background color for nodeType:', nodeType);
               selectCurrentCell();
-              editor.chain().focus().updateAttributes(nodeType, { backgroundColor: color }).run();
+              
+              // Add a small delay to ensure cell is selected
+              setTimeout(() => {
+                console.log('[DEBUG] Removing background color, current selection:', editor.state.selection);
+                
+                // The collaborative extensions still use the same node type names
+                const result = editor.chain().focus().updateAttributes(nodeType, { backgroundColor: null }).run();
+                console.log('[DEBUG] Remove color result:', result);
+                
+                // Force a state update to ensure collaboration sync
+                if (result) {
+                  console.log('[DEBUG] Forcing editor update for collaboration');
+                  editor.commands.focus();
+                }
+              }, 50);
             }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.15)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = 'none';
+          >
+            <span className="w-4 h-4 rounded-full border border-[#888] flex items-center justify-center bg-gradient-to-br from-[#fff] to-[#eee] relative">
+              <span style={{ position: 'absolute', width: '100%', height: 2, background: '#888', transform: 'rotate(-45deg)', top: '50%', left: 0, marginTop: -1 }} />
+            </span>
+            <span>Auto</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-9 gap-1.5 py-1.5">
+        {COLORS.map(color => (
+            <div
+            key={color}
+              className="w-[22px] h-[22px] rounded-full border-2 border-gray-400 cursor-pointer transition-transform grid place-items-center"
+              style={{ backgroundColor: color }}
+              onClick={e => {
+              e.stopPropagation();
+              e.preventDefault();
+              console.log('[DEBUG] Applying color:', color, 'to nodeType:', nodeType);
+              selectCurrentCell();
+              
+              // Add a small delay to ensure cell is selected
+              setTimeout(() => {
+                console.log('[DEBUG] Current editor state selection:', editor.state.selection);
+                console.log('[DEBUG] Applying to nodeType:', nodeType);
+                
+                // The collaborative extensions still use the same node type names
+                const result = editor.chain().focus().updateAttributes(nodeType, { backgroundColor: color }).run();
+                console.log('[DEBUG] Color application result:', result);
+                
+                // Check if the attribute was actually set
+                setTimeout(() => {
+                  const { selection } = editor.state;
+                  const $pos = selection.$from;
+                  for (let d = $pos.depth; d > 0; d--) {
+                    const node = $pos.node(d);
+                    if (node.type.name === nodeType) {
+                      console.log('[DEBUG] Node attributes after update:', node.attrs);
+                      break;
+                    }
+                  }
+                }, 100);
+                
+                // Force a state update to ensure collaboration sync
+                if (result) {
+                  console.log('[DEBUG] Forcing editor update for collaboration');
+                  editor.commands.focus();
+                }
+              }, 50);
             }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.15)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
           />
         ))}
         </div>

@@ -30,6 +30,20 @@ export default {
           hover: '#23282D',
           active: '#1B1F23',
         },
+        // Black theme colors
+        black: {
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+          950: '#0a0a0a',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -193,6 +207,64 @@ export default {
             },
           },
         },
+        black: {
+          css: {
+            color: '#e5e5e5',
+            a: {
+              color: '#60a5fa',
+              '&:hover': {
+                color: '#93c5fd',
+              },
+            },
+            h1: {
+              color: '#ffffff',
+            },
+            h2: {
+              color: '#ffffff',
+            },
+            h3: {
+              color: '#ffffff',
+            },
+            h4: {
+              color: '#ffffff',
+            },
+            strong: {
+              color: '#ffffff',
+            },
+            code: {
+              color: '#fca5a5',
+              backgroundColor: '#262626',
+            },
+            blockquote: {
+              borderLeftColor: '#404040',
+              color: '#a3a3a3',
+            },
+            hr: {
+              borderColor: '#404040',
+            },
+            ol: {
+              color: '#e5e5e5',
+            },
+            ul: {
+              color: '#e5e5e5',
+            },
+            li: {
+              color: '#e5e5e5',
+            },
+            table: {
+              color: '#e5e5e5',
+            },
+            thead: {
+              color: '#ffffff',
+              borderBottomColor: '#404040',
+            },
+            tbody: {
+              tr: {
+                borderBottomColor: '#262626',
+              },
+            },
+          },
+        },
       },
       spacing: {
         'btn-h': '40px',
@@ -221,5 +293,8 @@ export default {
   plugins: [
     require('@tailwindcss/typography'),
     require('@tailwindcss/forms'),
+    function ({ addVariant }) {
+      addVariant('black', '.black &');
+    },
   ],
 };

@@ -1,8 +1,9 @@
 .minimalTitleEditor {
   display: flex;
   align-items: center;
-  min-height: 0;
+  min-height: 1.5rem;
   width: 100%;
+  position: relative;
   /* Inherit all font, color, padding, margin, etc. from parent */
 }
 
@@ -28,4 +29,16 @@
   font: inherit !important;
   color: inherit !important;
   line-height: inherit !important;
+  font-size: 1.125rem !important; /* ~18px for titles */
+}
+
+.minimalTitleEditor :global(.ProseMirror) {
+  cursor: text !important;
+  min-height: 1.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.minimalTitleEditor :global(.ProseMirror:focus) {
+  outline: none !important;
 } 

@@ -7,15 +7,14 @@ const noteSchema = new mongoose.Schema({
     unique: true,
     default: function() { return this._id.toString(); }
   },
-  title: {
-    type: String,
-    required: false,
-    trim: true,
-    default: 'Untitled'
-  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    required: true
+  },
+  workspaceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Workspace',
     required: true
   },
   notebookIds: [{
@@ -34,18 +33,25 @@ const noteSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tag'
   }],
-  attachments: [{
-    filename: String,
-    originalName: String,
-    url: String,
-    type: String,
-    size: Number,
-    uploadedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
+  attachments: {
+    type: [{
+      filename: String,
+      originalName: String,
+      url: String,
+      type: String,
+      size: Number,
+      uploadedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    default: []
+  },
   isPinned: {
+    type: Boolean,
+    default: false
+  },
+  isShortcut: {
     type: Boolean,
     default: false
   },
@@ -106,7 +112,6 @@ const noteSchema = new mongoose.Schema({
     publicUrl: String
   },
 
-
   yjsUpdate: {
     type: Buffer, // Store the canonical Yjs update as a binary Buffer
     required: false
@@ -122,7 +127,6 @@ noteSchema.index({ userId: 1, isPinned: 1 });
 noteSchema.index({ userId: 1, lastViewedAt: -1 });
 noteSchema.index({ userId: 1, updatedAt: -1 });
 noteSchema.index({ tags: 1 });
-noteSchema.index({ title: 'text' });
 
 // Virtual for excerpt (now derived from YJS content)
 noteSchema.virtual('excerpt').get(function() {

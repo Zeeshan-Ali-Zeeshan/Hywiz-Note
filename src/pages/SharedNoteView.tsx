@@ -345,7 +345,7 @@ export default function SharedNoteView() {
         <div className="flex-1 bg-[#181818] rounded-lg shadow p-0">
           {/* Title below toolbar */}
           <div className="px-8 pt-4 pb-2">
-            {/* <h2 className="text-2xl font-bold text-white mb-2">{note.title}</h2> */}
+          {/* <h2 className="text-2xl font-bold text-white mb-2">{note.title}</h2> */}
           </div>
           <div className="flex-1 px-8 pb-8 overflow-y-auto">
             <RichTextEditor

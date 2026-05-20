@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
   preferences: {
     theme: {
       type: String,
-      enum: ['light', 'dark', 'auto'],
+      enum: ['light', 'black'],
       default: 'light'
     },
     backgroundImage: {
@@ -39,6 +39,11 @@ const userSchema = new mongoose.Schema({
       type: String,
       enum: ['comfortable', 'compact', 'spacious'],
       default: 'comfortable'
+    },
+    fontSize: {
+      type: String,
+      enum: ['small', 'medium', 'large'],
+      default: 'medium'
     },
     autoSaveInterval: {
       type: Number,

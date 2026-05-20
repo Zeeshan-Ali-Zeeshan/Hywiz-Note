@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { 
   Filter, SortAsc, SortDesc, 
-  Grid, List, MoreVertical, Share2, Palette,
-  Trash2, Archive, Pin, Tag, BookOpen
+  Grid, List, Trash2, Archive, Pin
 } from 'lucide-react';
 import { useNotesStore } from '../../stores/useNotesStore';
+import IconButton from '../common/IconButton';
 
-export const NotesToolbar: React.FC<{ onNoteCreated?: (noteId: string) => void; showFilters?: boolean; onToggleFilters?: () => void; }> = ({ onNoteCreated, showFilters, onToggleFilters }) => {
+export const NotesToolbar: React.FC<{ 
+  onNoteCreated?: (noteId: string) => void; 
+  showFilters?: boolean; 
+  onToggleFilters?: () => void;
+}> = ({ onNoteCreated, onToggleFilters }) => {
   const { 
     createNote, 
     viewMode, 
@@ -22,20 +26,6 @@ export const NotesToolbar: React.FC<{ onNoteCreated?: (noteId: string) => void; 
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showViewMenu, setShowViewMenu] = useState(false);
 
-  const handleCreateNote = async () => {
-    try {
-      const newNote = await createNote({
-        title: 'Untitled Note',
-        content: '',
-        plainTextContent: ''
-      });
-      if (onNoteCreated && newNote._id) {
-        onNoteCreated(newNote._id);
-      }
-    } catch (error) {
-      console.error('Failed to create note:', error);
-    }
-  };
 
   const handleBulkAction = async (action: 'delete' | 'archive' | 'pin') => {
     if (selectedNotes.length === 0) return;
@@ -60,59 +50,64 @@ export const NotesToolbar: React.FC<{ onNoteCreated?: (noteId: string) => void; 
   ];
 
   return (
-    <div className="bg-[#23272B] px-0 py-0">
-      <div className="flex items-center justify-end gap-2">
+    <div className="bg-white dark:bg-gray-800 black:bg-gray-900 px-0 py-0 border-b border-gray-200 dark:border-gray-700 black:border-gray-800">
+      <div className="flex items-center justify-end gap-1.5">
         {/* Center Section - Bulk Actions */}
         {selectedNotes.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-[#A3A7AB]">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500 dark:text-gray-400 black:text-gray-400">
               {selectedNotes.length} selected
             </span>
-            <button
+            <IconButton
               onClick={() => handleBulkAction('pin')}
-              className="p-2 text-[#A3A7AB] hover:text-yellow-400 hover:bg-[#353A40] rounded-[8px] transition-colors h-[36px] w-[36px] flex items-center justify-center"
-              title="Pin Notes"
-            >
-              <Pin className="w-[18px] h-[18px]" />
-            </button>
-            <button
+              icon={<Pin className="w-3.5 h-3.5" />}
+              tooltip="Pin Notes"
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 dark:text-gray-400 black:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 black:hover:text-yellow-400"
+            />
+            <IconButton
               onClick={() => handleBulkAction('archive')}
-              className="p-2 text-[#A3A7AB] hover:text-blue-400 hover:bg-[#353A40] rounded-[8px] transition-colors h-[36px] w-[36px] flex items-center justify-center"
-              title="Archive Notes"
-            >
-              <Archive className="w-[18px] h-[18px]" />
-            </button>
-            <button
+              icon={<Archive className="w-3.5 h-3.5" />}
+              tooltip="Archive Notes"
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 dark:text-gray-400 black:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 black:hover:text-blue-400"
+            />
+            <IconButton
               onClick={() => handleBulkAction('delete')}
-              className="p-2 text-[#A3A7AB] hover:text-red-400 hover:bg-[#353A40] rounded-[8px] transition-colors h-[36px] w-[36px] flex items-center justify-center"
-              title="Delete Notes"
-            >
-              <Trash2 className="w-[18px] h-[18px]" />
-            </button>
+              icon={<Trash2 className="w-3.5 h-3.5" />}
+              tooltip="Delete Notes"
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 dark:text-gray-400 black:text-gray-400 hover:text-red-500 dark:hover:text-red-400 black:hover:text-red-400"
+            />
           </div>
         )}
         {/* Right Section */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Filter Button */}
-          <button
+          <IconButton
             onClick={onToggleFilters}
-            className="h-[36px] w-[36px] flex items-center justify-center text-[#A3A7AB] bg-transparent rounded-[8px] hover:bg-[#353A40] transition-colors"
-            title="Filter"
-          >
-            <Filter className="w-[22px] h-[22px]" />
-          </button>
+            icon={<Filter className="w-4 h-4" />}
+            tooltip="Filter"
+            variant="ghost"
+            size="sm"
+            className="text-gray-600 dark:text-gray-400 black:text-gray-400"
+          />
           {/* View Toggle */}
           <div className="relative">
-            <button
+            <IconButton
               onClick={() => setShowViewMenu(!showViewMenu)}
-              className="h-[36px] w-[36px] flex items-center justify-center text-[#A3A7AB] bg-transparent rounded-[8px] hover:bg-[#353A40] transition-colors"
-              title="View"
-            >
-              {viewMode === 'list' ? <List className="w-[22px] h-[22px]" /> : <Grid className="w-[22px] h-[22px]" />}
-            </button>
+              icon={viewMode === 'list' ? <List className="w-4 h-4" /> : <Grid className="w-4 h-4" />}
+              tooltip="View"
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 dark:text-gray-400 black:text-gray-400"
+            />
 
             {showViewMenu && (
-              <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+              <div className="absolute right-0 mt-2 w-28 bg-white dark:bg-gray-800 black:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 black:border-gray-800 py-1 z-50">
                 {viewOptions.map((option) => {
                   const IconComponent = option.icon;
                   return (
@@ -122,13 +117,13 @@ export const NotesToolbar: React.FC<{ onNoteCreated?: (noteId: string) => void; 
                         setViewMode(option.value as 'list' | 'grid');
                         setShowViewMenu(false);
                       }}
-                      className={`w-full px-3 py-2 text-left text-sm flex items-center space-x-2 ${
+                      className={`w-full px-2 py-1.5 text-left text-xs flex items-center space-x-2 ${
                         viewMode === option.value
-                          ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          ? 'text-blue-600 dark:text-blue-400 black:text-blue-400 bg-blue-50 dark:bg-blue-900/20 black:bg-blue-900/20'
+                          : 'text-gray-700 dark:text-gray-300 black:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 black:hover:bg-gray-800'
                       }`}
                     >
-                      <IconComponent className="w-4 h-4" />
+                      <IconComponent className="w-3.5 h-3.5" />
                       <span>{option.label}</span>
                     </button>
                   );
@@ -139,16 +134,17 @@ export const NotesToolbar: React.FC<{ onNoteCreated?: (noteId: string) => void; 
 
           {/* Sort Menu */}
           <div className="relative">
-            <button
+            <IconButton
               onClick={() => setShowSortMenu(!showSortMenu)}
-              className="h-[36px] w-[36px] flex items-center justify-center text-[#A3A7AB] bg-transparent rounded-[8px] hover:bg-[#353A40] transition-colors"
-              title="Sort"
-            >
-              {sortOrder === 'asc' ? <SortAsc className="w-[22px] h-[22px]" /> : <SortDesc className="w-[22px] h-[22px]" />}
-            </button>
+              icon={sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+              tooltip="Sort"
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 dark:text-gray-400 black:text-gray-400"
+            />
 
             {showSortMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 black:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 black:border-gray-800 py-1 z-50">
                 {sortOptions.map((option) => (
                   <button
                     key={option.value}
@@ -156,22 +152,22 @@ export const NotesToolbar: React.FC<{ onNoteCreated?: (noteId: string) => void; 
                       setSortBy(option.value as any);
                       setShowSortMenu(false);
                     }}
-                    className={`w-full px-3 py-2 text-left text-sm ${
+                    className={`w-full px-2 py-1.5 text-left text-xs ${
                       sortBy === option.value
-                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'text-blue-600 dark:text-blue-400 black:text-blue-400 bg-blue-50 dark:bg-blue-900/20 black:bg-blue-900/20'
+                        : 'text-gray-700 dark:text-gray-300 black:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 black:hover:bg-gray-800'
                     }`}
                   >
                     {option.label}
                   </button>
                 ))}
-                <hr className="my-1 border-gray-200 dark:border-gray-700" />
+                <hr className="my-1 border-gray-200 dark:border-gray-700 black:border-gray-800" />
                 <button
                   onClick={() => {
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     setShowSortMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="w-full px-2 py-1.5 text-left text-xs text-gray-700 dark:text-gray-300 black:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 black:hover:bg-gray-800"
                 >
                   {sortOrder === 'asc' ? 'Newest First' : 'Oldest First'}
                 </button>

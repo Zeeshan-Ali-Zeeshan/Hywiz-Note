@@ -1,15 +1,18 @@
 import { create } from 'zustand';
 import api from '../lib/api';
+import { Tag } from './useTagsStore';
+import { extractTitleFromYjs } from '../lib/yjsUtils';
 
 export interface Template {
   _id: string;
   title: string;
   description: string;
   category: string;
-  tags: any[];
+  tags: Tag[] | string[];
   userId: any;
   isPublic: boolean;
   isPinned: boolean;
+  isShortcut: boolean;
   isArchived: boolean;
   isDeleted: boolean;
   collaborators: Array<{
@@ -59,7 +62,9 @@ interface TemplatesState {
   updateTemplate: (id: string, updates: Partial<Template>) => Promise<Template>;
   deleteTemplate: (id: string) => Promise<void>;
   duplicateTemplate: (id: string) => Promise<Template>;
+  createNoteFromTemplate: (id: string, notebookId?: string, workspaceId?: string) => Promise<any>;
   pinTemplate: (id: string) => Promise<void>;
+  toggleShortcut: (id: string, isShortcut: boolean) => Promise<void>;
   archiveTemplate: (id: string) => Promise<void>;
   shareTemplate: (id: string, isPublic: boolean, shareExpiry?: string) => Promise<any>;
   addCollaborator: (id: string, email: string, permission: string) => Promise<Template>;
@@ -130,8 +135,17 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
 
       const response = await api.get(`/templates?${queryParams.toString()}`);
       
+      // Extract titles from Yjs for each template
+      const templatesWithYjsTitles = response.data.templates.map((template: Template) => {
+        if (template.yjsUpdate) {
+          const yjsTitle = extractTitleFromYjs(template.yjsUpdate);
+          return { ...template, title: yjsTitle || template.title || 'Untitled Template' };
+        }
+        return { ...template, title: template.title || 'Untitled Template' };
+      });
+      
       set({
-        templates: response.data.templates,
+        templates: templatesWithYjsTitles,
         pagination: response.data.pagination,
         loading: false,
       });
@@ -158,8 +172,17 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
 
       const response = await api.get(`/templates/public?${queryParams.toString()}`);
       
+      // Extract titles from Yjs for each template
+      const templatesWithYjsTitles = response.data.templates.map((template: Template) => {
+        if (template.yjsUpdate) {
+          const yjsTitle = extractTitleFromYjs(template.yjsUpdate);
+          return { ...template, title: yjsTitle || template.title || 'Untitled Template' };
+        }
+        return { ...template, title: template.title || 'Untitled Template' };
+      });
+      
       set({
-        templates: response.data.templates,
+        templates: templatesWithYjsTitles,
         pagination: response.data.pagination,
         loading: false,
       });
@@ -177,6 +200,12 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
       
       const response = await api.get(`/templates/${id}`);
       const template = response.data;
+      
+      // Extract title from Yjs if available
+      if (template.yjsUpdate) {
+        const yjsTitle = extractTitleFromYjs(template.yjsUpdate);
+        template.title = yjsTitle || template.title || 'Untitled Template';
+      }
       
       set({
         currentTemplate: template,
@@ -197,8 +226,15 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       
+      console.log('🌐 Templates Store - Sending to API:', templateData);
+      console.log('🌐 API endpoint: POST /templates');
+      
       const response = await api.post('/templates', templateData);
       const newTemplate = response.data;
+      
+      console.log('🌐 API Response:', newTemplate);
+      console.log('🌐 Response has fallbackContent:', 'fallbackContent' in newTemplate);
+      console.log('🌐 Response fallbackContent:', newTemplate.fallbackContent);
       
       set((state) => ({
         templates: [newTemplate, ...state.templates],
@@ -208,6 +244,9 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
       
       return newTemplate;
     } catch (error: any) {
+      console.error('🌐 Templates Store - API Error:', error);
+      console.error('🌐 Error response:', error.response?.data);
+      
       set({
         error: error.response?.data?.message || 'Failed to create template',
         loading: false,
@@ -284,6 +323,28 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
     }
   },
 
+  createNoteFromTemplate: async (id: string, notebookId?: string, workspaceId?: string) => {
+    try {
+      set({ loading: true, error: null });
+      
+      const response = await api.post(`/templates/${id}/create-note`, {
+        notebookId,
+        workspaceId
+      });
+      const newNote = response.data;
+      
+      set({ loading: false });
+      
+      return newNote;
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || 'Failed to create note from template',
+        loading: false,
+      });
+      throw error;
+    }
+  },
+
   pinTemplate: async (id: string) => {
     try {
       const response = await api.post(`/templates/${id}/pin`);
@@ -300,6 +361,26 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
     } catch (error: any) {
       set({
         error: error.response?.data?.message || 'Failed to pin template',
+      });
+      throw error;
+    }
+  },
+
+  toggleShortcut: async (id: string, isShortcut: boolean) => {
+    try {
+      await api.patch(`/templates/${id}/shortcut`, { isShortcut });
+      
+      set((state) => ({
+        templates: state.templates.map(t => 
+          t._id === id ? { ...t, isShortcut } : t
+        ),
+        currentTemplate: state.currentTemplate?._id === id 
+          ? { ...state.currentTemplate, isShortcut }
+          : state.currentTemplate,
+      }));
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || 'Failed to toggle template shortcut',
       });
       throw error;
     }

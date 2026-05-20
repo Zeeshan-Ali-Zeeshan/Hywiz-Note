@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import api from '../lib/api';
 import socket from '../lib/socket';
+import { Tag } from './useTagsStore';
 
 export interface Note {
   _id: string;
-  title: string;
   userId: string;
+  workspaceId: string;
   notebookIds: Array<{
     _id: string;
     name: string;
@@ -16,11 +17,10 @@ export interface Note {
     name: string;
     color: string;
   } | string;
-  tags: Array<{
-    _id: string;
-    name: string;
-    color: string;
-  }> | string[];
+  tags: Tag[] | string[];
+  title: string;
+  content: string;
+  preview: string;
   attachments: Array<{
     filename: string;
     originalName: string;
@@ -30,11 +30,14 @@ export interface Note {
     uploadedAt: string;
   }>;
   isPinned: boolean;
+  isShortcut: boolean;
   isDeleted: boolean;
   deletedAt?: string;
+  noteWidth?: 'narrow' | 'standard' | 'wide' | 'full';
   lastViewedAt: string;
   createdAt: string;
   updatedAt: string;
+  yjsUpdate?: string;
   collaborators?: Array<{
     userId: string | {
       _id: string;
@@ -82,9 +85,12 @@ interface NotesState {
   createNote: (noteData: Partial<Note>) => Promise<Note>;
   updateNote: (id: string, data: Partial<Note>) => Promise<Note>;
   deleteNote: (id: string) => Promise<void>;
+  permanentDeleteNote: (id: string) => Promise<void>;
   restoreNote: (id: string) => Promise<void>;
   duplicateNote: (id: string) => Promise<Note>;
+  copyNoteTo: (id: string, destinationType: 'notebook' | 'workspace', destinationId: string) => Promise<Note>;
   pinNote: (id: string, isPinned: boolean) => Promise<void>;
+  toggleShortcut: (id: string, isShortcut: boolean) => Promise<void>;
   importNotes: (file: File, format: 'json' | 'txt' | 'md') => Promise<void>;
   exportNotes: (noteIds: string[], format: 'json' | 'txt' | 'md') => Promise<void>;
   setCurrentNote: (note: Note | null) => void;
@@ -133,7 +139,11 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   bulkPermanentDelete: async (noteIds: string[]) => {
     try {
       await api.post('/notes/bulk-permanent', { noteIds });
-      get().fetchNotes();
+      set(state => ({
+        notes: state.notes.filter(note => !noteIds.includes(note._id)),
+        selectedNotes: state.selectedNotes.filter(noteId => !noteIds.includes(noteId)),
+        total: state.total - noteIds.length
+      }));
     } catch (error) {
       console.error('Bulk permanent delete error:', error);
       throw error;
@@ -166,7 +176,27 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   fetchNote: async (id: string) => {
     try {
       const response = await api.get(`/notes/${id}`);
-      return response.data;
+      const note = response.data;
+      
+      // Add the note to the store if it's not already there
+      set(state => {
+        const existingNote = state.notes.find(n => n._id === id);
+        if (!existingNote) {
+          return {
+            notes: [note, ...state.notes],
+            total: state.total + 1
+          };
+        }
+        // Update existing note if it's different
+        if (JSON.stringify(existingNote) !== JSON.stringify(note)) {
+          return {
+            notes: state.notes.map(n => n._id === id ? note : n)
+          };
+        }
+        return state;
+      });
+      
+      return note;
     } catch (error) {
       console.error('Fetch note error:', error);
       throw error;
@@ -219,10 +249,11 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     try {
       await api.delete(`/notes/${id}`);
       set(state => ({
-        notes: state.notes.filter(note => note._id !== id),
+        notes: state.notes.map(note => 
+          note._id === id ? { ...note, isDeleted: true, deletedAt: new Date().toISOString() } : note
+        ),
         selectedNotes: state.selectedNotes.filter(noteId => noteId !== id),
-        currentNote: state.currentNote?._id === id ? null : state.currentNote,
-        total: state.total - 1
+        currentNote: state.currentNote?._id === id ? null : state.currentNote
       }));
     } catch (error) {
       console.error('Delete note error:', error);
@@ -230,11 +261,29 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     }
   },
 
+  permanentDeleteNote: async (id: string) => {
+    try {
+      await api.delete(`/notes/${id}/permanent`);
+      set(state => ({
+        notes: state.notes.filter(note => note._id !== id),
+        selectedNotes: state.selectedNotes.filter(noteId => noteId !== id),
+        currentNote: state.currentNote?._id === id ? null : state.currentNote,
+        total: state.total - 1
+      }));
+    } catch (error) {
+      console.error('Permanent delete note error:', error);
+      throw error;
+    }
+  },
+
   restoreNote: async (id: string) => {
     try {
       await api.post(`/notes/${id}/restore`);
-      // Refresh notes list
-      get().fetchNotes();
+      set(state => ({
+        notes: state.notes.map(note => 
+          note._id === id ? { ...note, isDeleted: false, deletedAt: undefined } : note
+        )
+      }));
     } catch (error) {
       console.error('Restore note error:', error);
       throw error;
@@ -254,6 +303,26 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       return duplicatedNote;
     } catch (error) {
       console.error('Duplicate note error:', error);
+      throw error;
+    }
+  },
+
+  copyNoteTo: async (id: string, destinationType: 'notebook' | 'workspace', destinationId: string) => {
+    try {
+      const response = await api.post(`/notes/${id}/copy-to`, {
+        destinationType,
+        destinationId
+      });
+      const copiedNote = response.data;
+      
+      set(state => ({
+        notes: [copiedNote, ...state.notes],
+        total: state.total + 1
+      }));
+      
+      return copiedNote;
+    } catch (error) {
+      console.error('Copy note error:', error);
       throw error;
     }
   },
@@ -284,13 +353,31 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     }
   },
 
+  toggleShortcut: async (id: string, isShortcut: boolean) => {
+    try {
+      await api.patch(`/notes/${id}/shortcut`, { isShortcut });
+      // Update the note in the store
+      set(state => ({
+        notes: state.notes.map(note => 
+          note._id === id ? { ...note, isShortcut } : note
+        ),
+        currentNote: state.currentNote?._id === id 
+          ? { ...state.currentNote, isShortcut } 
+          : state.currentNote
+      }));
+    } catch (error) {
+      console.error('Toggle shortcut error:', error);
+      throw error;
+    }
+  },
+
   importNotes: async (file: File, format: 'json' | 'txt' | 'md') => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('format', format);
       
-      const response = await api.post('/notes/import', formData, {
+      await api.post('/notes/import', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -366,7 +453,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     }
   },
 
-  autoSaveNote: async (id: string, title: string) => {
+  autoSaveNote: async () => {
     const { autoSaveTimeout } = get();
     
     // Clear existing timeout
@@ -375,18 +462,18 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     }
 
     // Set new timeout
-    const timeout = setTimeout(async () => {
-      try {
-        set({ saving: true });
-        await get().updateNote(id, { title });
-      } catch (error) {
-        console.error('Auto-save error:', error);
-      } finally {
-        set({ saving: false });
-      }
-    }, 3000);
+    // const timeout = setTimeout(async () => {
+    //   try {
+    //     set({ saving: true });
+    //     await get().updateNote(id, { title });
+    //   } catch (error) {
+    //     console.error('Auto-save error:', error);
+    //   } finally {
+    //     set({ saving: false });
+    //   }
+    // }, 3000);
 
-    set({ autoSaveTimeout: timeout });
+    // set({ autoSaveTimeout: timeout });
   },
 
   bulkOperation: async (action: string, noteIds: string[], data?: any) => {
@@ -501,21 +588,83 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   },
 
   uploadAttachment: async (noteId: string, file: File) => {
-    // 1. Upload file
-    const formData = new FormData();
-    formData.append('file', file);
-    const uploadRes = await api.post('/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    console.log('▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓');
+    console.log('[STORE UPLOAD DEBUG] uploadAttachment called');
+    console.log('[STORE UPLOAD DEBUG] Parameters:', {
+      noteId: noteId,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
     });
-    const attachment = uploadRes.data;
-    // 2. Add attachment to note
-    const res = await api.post(`/notes/${noteId}/attachments`, { attachment });
-    // 3. Update local note state
-    set(state => ({
-      notes: state.notes.map(n => n._id === noteId ? { ...n, attachments: res.data } : n),
-      currentNote: state.currentNote?._id === noteId ? { ...state.currentNote, attachments: res.data } : state.currentNote
-    }));
-    return attachment;
+    
+    try {
+      // 1. Upload file to server
+      console.log('[STORE UPLOAD DEBUG] Step 1: Preparing FormData...');
+      const formData = new FormData();
+      formData.append('file', file);
+      console.log('[STORE UPLOAD DEBUG] FormData created with file:', file.name);
+      
+      console.log('[STORE UPLOAD DEBUG] Step 2: Calling POST /api/upload...');
+      const uploadRes = await api.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      console.log('[STORE UPLOAD DEBUG] ✓ Upload endpoint responded');
+      console.log('[STORE UPLOAD DEBUG] Response status:', uploadRes.status);
+      console.log('[STORE UPLOAD DEBUG] Response data:', uploadRes.data);
+      
+      const attachment = uploadRes.data;
+      console.log('[STORE UPLOAD DEBUG] Attachment object:', {
+        filename: attachment?.filename,
+        url: attachment?.url,
+        type: attachment?.type,
+        size: attachment?.size
+      });
+      
+      // 2. Add attachment to note
+      console.log('[STORE UPLOAD DEBUG] Step 3: Adding attachment to note...');
+      console.log('[STORE UPLOAD DEBUG] Calling POST /api/notes/' + noteId + '/attachments');
+      
+      const res = await api.post(`/notes/${noteId}/attachments`, { attachment });
+      
+      console.log('[STORE UPLOAD DEBUG] ✓ Attachment added to note');
+      console.log('[STORE UPLOAD DEBUG] Response status:', res.status);
+      console.log('[STORE UPLOAD DEBUG] Response data (attachments array):', res.data);
+      
+      // 3. Update local note state
+      console.log('[STORE UPLOAD DEBUG] Step 4: Updating local state...');
+      set(state => ({
+        notes: state.notes.map(n => n._id === noteId ? { ...n, attachments: res.data } : n),
+        currentNote: state.currentNote?._id === noteId ? { ...state.currentNote, attachments: res.data } : state.currentNote
+      }));
+      
+      console.log('[STORE UPLOAD DEBUG] ✓ Local state updated');
+      console.log('[STORE UPLOAD DEBUG] ✓✓✓ Upload complete! Returning attachment:', attachment);
+      console.log('▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓');
+      return attachment;
+    } catch (error) {
+      console.error('▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓');
+      console.error('[STORE UPLOAD ERROR] ✗ Upload failed!');
+      console.error('[STORE UPLOAD ERROR] Error object:', error);
+      console.error('[STORE UPLOAD ERROR] Error message:', error?.message);
+      
+      if (error.response) {
+        console.error('[STORE UPLOAD ERROR] Response exists');
+        console.error('[STORE UPLOAD ERROR] Response status:', error.response.status);
+        console.error('[STORE UPLOAD ERROR] Response headers:', error.response.headers);
+        console.error('[STORE UPLOAD ERROR] Response data:', error.response.data);
+      } else if (error.request) {
+        console.error('[STORE UPLOAD ERROR] Request was made but no response received');
+        console.error('[STORE UPLOAD ERROR] Request:', error.request);
+      } else {
+        console.error('[STORE UPLOAD ERROR] Error setting up request:', error.message);
+      }
+      
+      console.error('▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓');
+      throw error;
+    }
   },
 
   removeAttachment: async (noteId: string, filename: string) => {
@@ -545,6 +694,19 @@ if (typeof window !== 'undefined' && !(window as any)._notesListenersAdded) {
       ),
       currentNote: state.currentNote?._id === updatedNote._id
         ? { ...state.currentNote, ...updatedNote }
+        : state.currentNote,
+    }));
+  });
+
+  socket.on('note-updated', (payload) => {
+    const id = payload?._id || payload?.noteId;
+    if (!id) return;
+    useNotesStore.setState(state => ({
+      notes: state.notes.map(note =>
+        note._id === id ? { ...note, ...payload, _id: note._id } : note
+      ),
+      currentNote: state.currentNote?._id === id
+        ? { ...state.currentNote, ...payload, _id: state.currentNote._id }
         : state.currentNote,
     }));
   });

@@ -1,6 +1,9 @@
+ 
+
 import express from 'express';
 import Note from '../models/Note.js';
 import Notebook from '../models/Notebook.js';
+import Workspace from '../models/Workspace.js';
 import auth from '../middleware/auth.js';
 import Tag from '../models/Tag.js';
 import path from 'path';
@@ -12,6 +15,11 @@ import SharedNote from '../models/SharedNote.js';
 import * as Y from 'yjs';
 import { Buffer } from 'buffer';
 import { htmlToProseMirrorJSON } from '../utils/htmlToProseMirrorJSON.js';
+import { extractPlainTextFromYjs } from '../utils/yjsToPlainText.js';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 const upload = multer({ dest: 'server/uploads/' });
@@ -79,14 +87,40 @@ router.get('/', auth, async (req, res) => {
 
     const notes = await Note.find(query)
       .populate('primaryNotebookId', 'name color')
+      .lean() // Use lean() to avoid validation errors with corrupted attachments
       .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Convert yjsUpdate to base64 string and fix attachments for each note
+    const notesWithYjsUpdate = notes.map(note => {
+      const noteObj = { ...note };
+      
+      // Fix attachments if corrupted
+      if (noteObj.attachments && typeof noteObj.attachments === 'string') {
+        noteObj.attachments = fixAttachments(noteObj.attachments);
+      } else if (!Array.isArray(noteObj.attachments)) {
+        noteObj.attachments = [];
+      }
+      
+      // Convert yjsUpdate Buffer to base64
+      if (noteObj.yjsUpdate) {
+        if (Buffer.isBuffer(noteObj.yjsUpdate)) {
+          noteObj.yjsUpdate = noteObj.yjsUpdate.toString('base64');
+        } else if (noteObj.yjsUpdate.buffer) {
+          noteObj.yjsUpdate = Buffer.from(noteObj.yjsUpdate.buffer).toString('base64');
+        } else if (noteObj.yjsUpdate.data) {
+          noteObj.yjsUpdate = Buffer.from(noteObj.yjsUpdate.data).toString('base64');
+        }
+      }
+      
+      return noteObj;
+    });
+
     const total = await Note.countDocuments(query);
 
     res.json({
-      notes,
+      notes: notesWithYjsUpdate,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
       total
@@ -97,40 +131,185 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Helper function to fix attachments from string to array
+function fixAttachments(attachments) {
+  if (!attachments) return [];
+  if (Array.isArray(attachments)) return attachments;
+  if (typeof attachments !== 'string') return [];
+  
+  try {
+    // Try to parse as JSON string
+    const parsed = JSON.parse(attachments);
+    if (Array.isArray(parsed)) {
+      return parsed.map(att => ({
+        ...att,
+        uploadedAt: att.uploadedAt ? new Date(att.uploadedAt) : new Date()
+      }));
+    }
+  } catch (e) {
+    // If parsing fails, try to parse as JavaScript object notation
+    try {
+      // Handle format like "[\n  {\n    filename: '...',\n    ...\n  }\n]"
+      const cleaned = attachments
+        .replace(/filename:\s*'([^']+)'/g, '"filename": "$1"')
+        .replace(/originalName:\s*'([^']+)'/g, '"originalName": "$1"')
+        .replace(/url:\s*'([^']+)'/g, '"url": "$1"')
+        .replace(/type:\s*'([^']+)'/g, '"type": "$1"')
+        .replace(/size:\s*(\d+)/g, '"size": $1')
+        .replace(/uploadedAt:\s*([^\n}]+)/g, (match, dateStr) => {
+          return `"uploadedAt": "${dateStr.trim()}"`;
+        });
+      const parsed = JSON.parse(cleaned);
+      if (Array.isArray(parsed)) {
+        return parsed.map(att => ({
+          ...att,
+          uploadedAt: att.uploadedAt ? new Date(att.uploadedAt) : new Date()
+        }));
+      }
+    } catch (e2) {
+      console.error('[ATTACHMENTS FIX] Failed to parse attachments string:', e2.message);
+      return [];
+    }
+  }
+  
+  return [];
+}
+
 // Get single note
 router.get('/:id', auth, async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id).populate('primaryNotebookId', 'name color');
-    if (!note) {
+    // Use lean() to get raw data without Mongoose validation
+    // This avoids validation errors when attachments is stored as string
+    const noteData = await Note.findById(req.params.id).lean().populate('primaryNotebookId', 'name color');
+    
+    if (!noteData) {
       return res.status(404).json({ message: 'Note not found' });
     }
-    const isOwner = note.userId.toString() === req.userId;
-    const isCollaborator = note.collaborators && note.collaborators.some(c => c.userId.toString() === req.userId);
-    const isPublicEditor = note.shareSettings?.isPublic && note.shareSettings?.allowEdit;
-    if (!isOwner && !isCollaborator && !isPublicEditor) {
+    
+    // CRITICAL: Preserve yjsUpdate BEFORE any modifications
+    // lean() returns MongoDB Binary type which needs special handling
+    let preservedYjsUpdate = null;
+    if (noteData.yjsUpdate) {
+      if (Buffer.isBuffer(noteData.yjsUpdate)) {
+        preservedYjsUpdate = noteData.yjsUpdate;
+      } else if (noteData.yjsUpdate.buffer) {
+        preservedYjsUpdate = Buffer.from(noteData.yjsUpdate.buffer);
+      } else if (noteData.yjsUpdate.data) {
+        preservedYjsUpdate = Buffer.from(noteData.yjsUpdate.data);
+      } else if (typeof noteData.yjsUpdate === 'string') {
+        preservedYjsUpdate = noteData.yjsUpdate;
+      }
+    }
+    
+    // Fix attachments if needed
+    if (noteData.attachments && typeof noteData.attachments === 'string') {
+      const fixedAttachments = fixAttachments(noteData.attachments);
+      // Save the fixed version back to database using MongoDB driver to bypass validation
+      // Convert uploadedAt to Date objects for MongoDB
+      const attachmentsForDB = fixedAttachments.map(att => ({
+        ...att,
+        uploadedAt: att.uploadedAt instanceof Date ? att.uploadedAt : new Date(att.uploadedAt || Date.now())
+      }));
+      
+      await Note.collection.updateOne(
+        { _id: noteData._id },
+        { $set: { attachments: attachmentsForDB } }
+      );
+      noteData.attachments = fixedAttachments;
+      console.log('[ATTACHMENTS FIX] Fixed and saved attachments for note:', req.params.id);
+    } else if (!Array.isArray(noteData.attachments)) {
+      noteData.attachments = [];
+      await Note.collection.updateOne(
+        { _id: noteData._id },
+        { $set: { attachments: [] } }
+      );
+    }
+    
+    // Convert userId to string for comparison
+    const noteUserId = noteData.userId ? (typeof noteData.userId === 'string' ? noteData.userId : noteData.userId.toString()) : null;
+    const isOwner = noteUserId === req.userId;
+    const isCollaborator = noteData.collaborators && noteData.collaborators.some(c => {
+      if (!c.userId) return false;
+      const collabUserId = typeof c.userId === 'string' ? c.userId : c.userId.toString();
+      return collabUserId === req.userId;
+    });
+    const isPublicEditor = noteData.shareSettings?.isPublic && noteData.shareSettings?.allowEdit;
+    // Check notebook-level collaboration
+    const primaryNotebookId = noteData.primaryNotebookId?._id || noteData.primaryNotebookId;
+    const notebookIdsToCheck = [primaryNotebookId, ...(noteData.notebookIds || [])].filter(Boolean);
+    const isNotebookCollaborator = notebookIdsToCheck.length > 0
+      ? !!(await Notebook.exists({ _id: { $in: notebookIdsToCheck }, 'collaborators.userId': req.userId }))
+      : false;
+    // Check workspace-level collaboration (with scope)
+    let isWorkspaceCollaborator = false;
+    if (noteData.workspaceId) {
+      const ws = await Workspace.findById(noteData.workspaceId);
+      if (ws && Array.isArray(ws.collaborators)) {
+        const collab = ws.collaborators.find(c => c.userId && c.userId.toString() === req.userId);
+        if (collab) {
+          if (collab.scope === 'all') {
+            isWorkspaceCollaborator = true;
+          } else if (collab.scope === 'selected') {
+            const scopeNotebookIds = (collab.notebookIds || []).map(id => id.toString());
+            isWorkspaceCollaborator = notebookIdsToCheck.some(id => scopeNotebookIds.includes(id.toString()));
+          }
+        }
+      }
+    }
+    if (!isOwner && !isCollaborator && !isPublicEditor && !isNotebookCollaborator && !isWorkspaceCollaborator) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     // Merge sharing/collaborator info from SharedNote
-    const sharedNote = await SharedNote.findOne({ noteId: note._id });
+    const noteId = noteData._id ? (typeof noteData._id === 'string' ? noteData._id : noteData._id.toString()) : null;
+    const sharedNote = noteId ? await SharedNote.findOne({ noteId: noteId }) : null;
     if (sharedNote) {
-      note._doc.sharedWith = sharedNote.sharedWith;
-      note._doc.isPublic = sharedNote.isPublic;
-      note._doc.publicUrl = sharedNote.publicUrl;
+      noteData.sharedWith = sharedNote.sharedWith;
+      noteData.isPublic = sharedNote.isPublic;
+      noteData.publicUrl = sharedNote.publicUrl;
     }
     // Update last viewed
-    note.lastViewedAt = new Date();
-    await note.save();
+    await Note.findByIdAndUpdate(req.params.id, { lastViewedAt: new Date() }, { runValidators: false });
+    
     // --- Return yjsUpdate as base64 string and fallback content ---
-    const noteObj = note.toObject();
+    // Prepare response object - preserve all original data
+    const noteObj = { ...noteData };
+    
     try {
-      noteObj.yjsUpdate = note.yjsUpdate ? note.yjsUpdate.toString('base64') : undefined;
+      // Convert preserved yjsUpdate Buffer to base64
+      if (preservedYjsUpdate) {
+        if (Buffer.isBuffer(preservedYjsUpdate)) {
+          noteObj.yjsUpdate = preservedYjsUpdate.toString('base64');
+        } else if (typeof preservedYjsUpdate === 'string') {
+          noteObj.yjsUpdate = preservedYjsUpdate;
+        } else {
+          noteObj.yjsUpdate = undefined;
+        }
+      } else {
+        noteObj.yjsUpdate = undefined;
+      }
     } catch (err) {
+      console.error('[YJS ERROR] Failed to convert yjsUpdate:', err);
       noteObj.yjsUpdate = undefined;
       noteObj.yjsError = 'Corrupted Yjs data';
     }
+    
+    // Ensure attachments are properly formatted (array of objects)
+    if (!Array.isArray(noteObj.attachments)) {
+      noteObj.attachments = [];
+    }
+    
+    // Convert Date objects to ISO strings for proper JSON serialization
+    if (noteObj.attachments && Array.isArray(noteObj.attachments)) {
+      noteObj.attachments = noteObj.attachments.map(att => ({
+        ...att,
+        uploadedAt: att.uploadedAt ? (att.uploadedAt instanceof Date ? att.uploadedAt.toISOString() : att.uploadedAt) : new Date().toISOString()
+      }));
+    }
+    
     // Always include fallback content for editor initialization
-    noteObj.fallbackContent = note.content || '';
-    noteObj.fallbackPlainText = note.plainTextContent || '';
+    noteObj.fallbackContent = noteData.content || '';
+    noteObj.fallbackPlainText = noteData.plainTextContent || '';
+    
     res.json(noteObj);
   } catch (error) {
     console.error('Get note error:', error);
@@ -141,7 +320,7 @@ router.get('/:id', auth, async (req, res) => {
 // Create note
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, notebookId, primaryNotebookId, tags } = req.body;
+    const { title, notebookId, primaryNotebookId, tags, workspaceId, content, yjsUpdate } = req.body;
 
     // Get default notebook if none specified
     let targetNotebookId = primaryNotebookId || notebookId;
@@ -164,44 +343,35 @@ router.post('/', auth, async (req, res) => {
       targetNotebookId = defaultNotebook._id;
     }
 
-    // --- Yjs: Generate canonical update for initial content ---
+    // --- Yjs: Prefer client-provided update; otherwise generate from content ---
     let yjsUpdateBuffer = undefined;
     try {
-      const ydoc = new Y.Doc();
-      const yXml = ydoc.getXmlFragment('prosemirror');
-      if (content) {
-        // Convert HTML to plain text and create a simple paragraph structure
-        const plainText = content.replace(/<[^>]*>/g, '').trim();
-        if (plainText) {
-          // Create a simple paragraph with text content that YJS can handle
-          const paragraphContent = {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: plainText
-              }
-            ]
-          };
-          yXml.insert(0, [paragraphContent]);
-        } else {
-          // Insert empty paragraph
-          const emptyParagraph = {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: ''
-              }
-            ]
-          };
-          yXml.insert(0, [emptyParagraph]);
+      if (yjsUpdate && typeof yjsUpdate === 'string') {
+        yjsUpdateBuffer = Buffer.from(yjsUpdate, 'base64');
+      } else {
+        const ydoc = new Y.Doc();
+        // Title fragment
+        if (title && title.trim()) {
+          const yTitleFrag = ydoc.getXmlFragment('title');
+          const yTitleText = new Y.XmlText();
+          yTitleText.insert(0, title.trim());
+          yTitleFrag.insert(0, [yTitleText]);
         }
+        // Body -> prosemirror paragraphs
+        const yXml = ydoc.getXmlFragment('prosemirror');
+        const plainText = (content || '').replace(/<[^>]*>/g, '').replace(/\r/g, '').split("\n");
+        const paras = (plainText.length ? plainText : ['']).map(line => {
+          const p = new Y.XmlElement('paragraph');
+          if (line && line.length > 0) {
+            const t = new Y.XmlText();
+            t.insert(0, line);
+            p.insert(0, [t]);
+          }
+          return p;
+        });
+        yXml.insert(0, paras);
+        yjsUpdateBuffer = Buffer.from(Y.encodeStateAsUpdate(ydoc));
       }
-      // Optionally, set title as well (if you use Y.Text for title)
-      // const yTitle = ydoc.getText('title');
-      // if (title) yTitle.insert(0, title);
-      yjsUpdateBuffer = Buffer.from(Y.encodeStateAsUpdate(ydoc));
     } catch (e) {
       console.error('[YJS] Failed to generate initial Yjs update:', e);
     }
@@ -210,6 +380,7 @@ router.post('/', auth, async (req, res) => {
       noteId: new mongoose.Types.ObjectId().toString(), // Ensure unique noteId
       title: typeof title === 'string' ? title : '',
       userId: req.userId,
+      workspaceId: workspaceId || null,
       primaryNotebookId: targetNotebookId,
       notebookIds: [targetNotebookId],
       tags: tags || [],
@@ -232,7 +403,14 @@ router.post('/', auth, async (req, res) => {
     // Emit real-time update
     req.io.emit('note-created', { note, userId: req.userId });
 
-    res.status(201).json(note);
+    // Convert yjsUpdate to base64 in response for immediate client usage
+    const noteObj = note.toObject();
+    if (noteObj.yjsUpdate) {
+      try {
+        noteObj.yjsUpdate = noteObj.yjsUpdate.toString('base64');
+      } catch {}
+    }
+    res.status(201).json(noteObj);
   } catch (error) {
     console.error('Create note error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -250,7 +428,35 @@ router.put('/:id', auth, async (req, res) => {
     const isOwner = note.userId.toString() === req.userId;
     const isCollaborator = note.collaborators && note.collaborators.some(c => c.userId.toString() === req.userId && (c.permission === 'admin' || c.permission === 'write'));
     const isPublicEditor = note.shareSettings?.isPublic && note.shareSettings?.allowEdit;
-    if (!isOwner && !isCollaborator && !isPublicEditor) {
+    // Notebook-level write access
+    const notebookIdsToCheck = [note.primaryNotebookId, ...(note.notebookIds || [])].filter(Boolean);
+    let hasNotebookWrite = false;
+    if (notebookIdsToCheck.length > 0) {
+      const nb = await Notebook.findOne({ _id: { $in: notebookIdsToCheck }, 'collaborators.userId': req.userId });
+      if (nb && Array.isArray(nb.collaborators)) {
+        const collab = nb.collaborators.find((c) => c.userId && c.userId.toString() === req.userId);
+        if (collab && (collab.permission === 'admin' || collab.permission === 'write')) {
+          hasNotebookWrite = true;
+        }
+      }
+    }
+    // Workspace-level write access with scope
+    let hasWorkspaceWrite = false;
+    if (note.workspaceId) {
+      const ws = await Workspace.findById(note.workspaceId);
+      if (ws && Array.isArray(ws.collaborators)) {
+        const collab = ws.collaborators.find(c => c.userId && c.userId.toString() === req.userId);
+        if (collab && (collab.permission === 'admin' || collab.permission === 'write')) {
+          if (collab.scope === 'all') {
+            hasWorkspaceWrite = true;
+          } else if (collab.scope === 'selected') {
+            const scopeNotebookIds = (collab.notebookIds || []).map(id => id.toString());
+            hasWorkspaceWrite = notebookIdsToCheck.some(id => scopeNotebookIds.includes(id.toString()));
+          }
+        }
+      }
+    }
+    if (!isOwner && !isCollaborator && !isPublicEditor && !hasNotebookWrite && !hasWorkspaceWrite) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     const oldNotebookId = note.primaryNotebookId;
@@ -293,8 +499,16 @@ router.put('/:id', auth, async (req, res) => {
         await Tag.updateMany({ _id: { $in: removedTags } }, { $inc: { noteCount: -1 } });
       }
     }
-    // Emit real-time update
-    req.io.emit('note-updated', { note, userId: req.userId });
+    // Emit real-time update with a lean payload to avoid sending buffers
+    const broadcastPayload = {
+      noteId: note._id.toString(),
+      title: note.title,
+      updatedAt: note.updatedAt,
+      preview: note.preview
+    };
+    if (req.io) {
+      req.io.emit('note-updated', broadcastPayload);
+    }
     res.json(note);
   } catch (error) {
     console.error('Update note error:', error);
@@ -414,9 +628,11 @@ router.post('/:id/duplicate', auth, async (req, res) => {
       content: originalNote.content,
       plainTextContent: originalNote.plainTextContent,
       userId: req.userId,
+      workspaceId: originalNote.workspaceId,
       primaryNotebookId: originalNote.primaryNotebookId,
       notebookIds: [originalNote.primaryNotebookId],
-      tags: [...originalNote.tags]
+      tags: [...originalNote.tags],
+      yjsUpdate: originalNote.yjsUpdate // Include YJS data if available
     });
 
     await duplicatedNote.save();
@@ -430,6 +646,99 @@ router.post('/:id/duplicate', auth, async (req, res) => {
     res.status(201).json(duplicatedNote);
   } catch (error) {
     console.error('Duplicate note error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Copy note to specific destination
+router.post('/:id/copy-to', auth, async (req, res) => {
+  try {
+    const { destinationType, destinationId } = req.body;
+    
+    if (!destinationType || !destinationId) {
+      return res.status(400).json({ message: 'Destination type and ID are required' });
+    }
+
+    const originalNote = await Note.findOne({
+      _id: req.params.id,
+      userId: req.userId
+    });
+
+    if (!originalNote) {
+      return res.status(404).json({ message: 'Note not found' });
+    }
+
+    let targetNotebookId = destinationId;
+    let targetWorkspaceId = originalNote.workspaceId;
+
+    if (destinationType === 'notebook') {
+      // Verify the notebook exists and user has access
+      const notebook = await Notebook.findOne({
+        _id: destinationId,
+        $or: [
+          { userId: req.userId },
+          { 'collaborators.userId': req.userId }
+        ]
+      });
+      
+      if (!notebook) {
+        return res.status(404).json({ message: 'Notebook not found or access denied' });
+      }
+      
+      targetNotebookId = notebook._id;
+      targetWorkspaceId = notebook.workspaceId || originalNote.workspaceId;
+    } else if (destinationType === 'workspace') {
+      // For workspace, we'll use the default notebook of that workspace
+      const Workspace = require('../models/Workspace');
+      const workspace = await Workspace.findOne({
+        _id: destinationId,
+        $or: [
+          { userId: req.userId },
+          { 'collaborators.userId': req.userId }
+        ]
+      });
+      
+      if (!workspace) {
+        return res.status(404).json({ message: 'Workspace not found or access denied' });
+      }
+      
+      // Find the default notebook in this workspace
+      const defaultNotebook = await Notebook.findOne({
+        workspaceId: workspace._id,
+        isDefault: true
+      });
+      
+      if (!defaultNotebook) {
+        return res.status(404).json({ message: 'Default notebook not found in workspace' });
+      }
+      
+      targetNotebookId = defaultNotebook._id;
+      targetWorkspaceId = workspace._id;
+    }
+
+    const copiedNote = new Note({
+      title: `${originalNote.title} (Copy)`,
+      content: originalNote.content,
+      plainTextContent: originalNote.plainTextContent,
+      userId: req.userId,
+      primaryNotebookId: targetNotebookId,
+      notebookIds: [targetNotebookId],
+      workspaceId: targetWorkspaceId,
+      tags: [...originalNote.tags],
+      yjsUpdate: originalNote.yjsUpdate // Include YJS data if available
+    });
+
+    await copiedNote.save();
+    await copiedNote.populate('primaryNotebookId', 'name color');
+
+    // Update notebook note count
+    await Notebook.findByIdAndUpdate(targetNotebookId, {
+      $inc: { noteCount: 1 }
+    });
+
+    res.status(201).json(copiedNote);
+  } catch (error) {
+    console.error('Copy note error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -810,19 +1119,194 @@ router.post('/bulk-permanent', auth, async (req, res) => {
 
 // Add attachment to a note
 router.post('/:id/attachments', auth, async (req, res) => {
+  let note;
   try {
-    const note = await Note.findOne({ _id: req.params.id, userId: req.userId });
-    if (!note) return res.status(404).json({ message: 'Note not found' });
+    console.log('▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒');
+    console.log('[SERVER ATTACHMENT DEBUG] POST /api/notes/:id/attachments');
+    console.log('[SERVER ATTACHMENT DEBUG] Timestamp:', new Date().toISOString());
+    console.log('[SERVER ATTACHMENT DEBUG] Note ID:', req.params.id);
+    console.log('[SERVER ATTACHMENT DEBUG] User ID:', req.userId);
+    console.log('[SERVER ATTACHMENT DEBUG] Request body:', JSON.stringify(req.body, null, 2));
+    console.log('[SERVER ATTACHMENT DEBUG] Attachment data:', req.body.attachment);
+    
+    console.log('[SERVER ATTACHMENT DEBUG] Finding note in database...');
+    note = await Note.findOne({ _id: req.params.id, userId: req.userId });
+    if (!note) {
+      console.error('[SERVER ATTACHMENT DEBUG] ✗ Note not found:', req.params.id);
+      return res.status(404).json({ message: 'Note not found' });
+    }
+    console.log('[SERVER ATTACHMENT DEBUG] ✓ Note found:', note.title);
+    console.log('[SERVER ATTACHMENT DEBUG] Current attachments count:', Array.isArray(note.attachments) ? note.attachments.length : 0);
+    
     const { attachment } = req.body; // expects { filename, originalName, url, type, size, uploadedAt }
     if (!attachment || !attachment.filename) {
+      console.error('[SERVER ATTACHMENT DEBUG] ✗ Invalid attachment data');
       return res.status(400).json({ message: 'Invalid attachment data' });
     }
-    note.attachments.push(attachment);
-    await note.save();
-    res.json(note.attachments);
+    console.log('[SERVER ATTACHMENT DEBUG] ✓ Attachment data valid:', {
+      filename: attachment.filename,
+      originalName: attachment.originalName,
+      url: attachment.url,
+      type: attachment.type,
+      size: attachment.size
+    });
+    
+    // Add attachment to note using findByIdAndUpdate to bypass schema caching issues
+    console.log('[SERVER ATTACHMENT DEBUG] Adding attachment to note array...');
+    // Convert uploadedAt to Date if it's a string
+    const attachmentData = {
+      filename: attachment.filename,
+      originalName: attachment.originalName,
+      url: attachment.url,
+      type: attachment.type,
+      size: attachment.size,
+      uploadedAt: attachment.uploadedAt ? new Date(attachment.uploadedAt) : new Date()
+    };
+    console.log('[SERVER ATTACHMENT DEBUG] Formatted attachment data:', attachmentData);
+    
+    // Use direct MongoDB update to completely bypass Mongoose validation
+    console.log('[SERVER ATTACHMENT DEBUG] Using direct MongoDB $push operation...');
+    try {
+      // Use the native MongoDB driver to bypass all Mongoose validation
+      const result = await Note.collection.updateOne(
+        { _id: note._id },
+        { 
+          $push: { attachments: attachmentData }
+        }
+      );
+      
+      console.log('[SERVER ATTACHMENT DEBUG] MongoDB update result:', {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount
+      });
+      
+      if (result.modifiedCount === 0) {
+        console.error('[SERVER ATTACHMENT DEBUG] ✗ Failed to update note - no documents modified');
+        return res.status(500).json({ message: 'Failed to update note with attachment' });
+      }
+      
+      console.log('[SERVER ATTACHMENT DEBUG] ✓ Note updated with new attachment via direct MongoDB operation');
+      
+      // Fetch the updated note using lean() to avoid validation errors
+      const updatedNote = await Note.findById(req.params.id).lean();
+      console.log('[SERVER ATTACHMENT DEBUG] Fetched updated note, attachments count:', (updatedNote && Array.isArray(updatedNote.attachments)) ? updatedNote.attachments.length : 0);
+      
+      // Fix attachments if needed (in case they're corrupted)
+      if (updatedNote && updatedNote.attachments && typeof updatedNote.attachments === 'string') {
+        const fixedAttachments = fixAttachments(updatedNote.attachments);
+        const attachmentsForDB = fixedAttachments.map(att => ({
+          ...att,
+          uploadedAt: att.uploadedAt instanceof Date ? att.uploadedAt : new Date(att.uploadedAt || Date.now())
+        }));
+        await Note.collection.updateOne(
+          { _id: updatedNote._id },
+          { $set: { attachments: attachmentsForDB } }
+        );
+        updatedNote.attachments = fixedAttachments;
+      }
+      
+      // Convert to proper format for response
+      const noteForResponse = {
+        ...updatedNote,
+        attachments: Array.isArray(updatedNote.attachments) ? updatedNote.attachments : []
+      };
+      
+      // Update the note variable for the rest of the code
+      note = noteForResponse;
+    } catch (updateError) {
+      console.error('[SERVER ATTACHMENT DEBUG] ✗ Direct MongoDB update failed:', updateError);
+      throw updateError;
+    }
+    
+    // Also create a File record so it appears in Files page
+    console.log('[SERVER ATTACHMENT DEBUG] Step 2: Creating File record...');
+    const File = (await import('../models/File.js')).default;
+    
+    // Check if File record already exists to prevent duplicates
+    console.log('[SERVER ATTACHMENT DEBUG] Checking for existing File record...');
+    const existingFile = await File.findOne({ 
+      url: attachment.url,
+      uploadedBy: req.userId 
+    });
+    
+    if (!existingFile) {
+      console.log('[SERVER ATTACHMENT DEBUG] No existing File record, creating new one...');
+      // Use absolute path that matches the upload route
+      const uploadsDir = path.join(__dirname, '../uploads');
+      const filePath = path.join(uploadsDir, attachment.filename);
+      
+      console.log('[SERVER ATTACHMENT DEBUG] File path:', filePath);
+      
+      // Verify the file actually exists on disk
+      console.log('[SERVER ATTACHMENT DEBUG] Verifying file exists on disk...');
+      try {
+        await fs.access(filePath);
+        console.log('[SERVER ATTACHMENT DEBUG] ✓ File exists on disk at:', filePath);
+      } catch (fsError) {
+        console.error('[SERVER ATTACHMENT DEBUG] ✗ File does not exist at path:', filePath);
+        console.error('[SERVER ATTACHMENT DEBUG] File system error:', fsError.message);
+        // Don't fail the request, just log the error
+        // The file should have been saved by the upload route
+      }
+      
+      // Create new file record
+      const fileRecordData = {
+        name: attachment.originalName || attachment.filename,
+        originalName: attachment.originalName || attachment.filename,
+        mimetype: attachment.type,
+        size: attachment.size,
+        path: filePath,
+        url: attachment.url,
+        description: `Attachment from note: ${note.title}`,
+        tags: [],
+        uploadedBy: req.userId,
+        workspace: note.workspaceId || null,
+        notebook: note.primaryNotebookId || null
+      };
+      
+      console.log('[SERVER ATTACHMENT DEBUG] File record data:', JSON.stringify(fileRecordData, null, 2));
+      
+      console.log('[SERVER ATTACHMENT DEBUG] Saving File record to database...');
+      const newFile = new File(fileRecordData);
+      await newFile.save();
+      console.log('[SERVER ATTACHMENT DEBUG] ✓ File record created successfully:', newFile._id);
+    } else {
+      console.log('[SERVER ATTACHMENT DEBUG] File record already exists:', existingFile._id);
+    }
+    
+    console.log('[SERVER ATTACHMENT DEBUG] ✓✓✓ All steps complete!');
+    console.log('[SERVER ATTACHMENT DEBUG] Returning attachments array, length:', (note && Array.isArray(note.attachments)) ? note.attachments.length : 0);
+    console.log('[SERVER ATTACHMENT DEBUG] Sending success response');
+    console.log('▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒');
+    // Return attachments array - ensure it's always an array
+    const attachmentsToReturn = note && Array.isArray(note.attachments) 
+      ? note.attachments 
+      : (note && typeof note.attachments === 'string' 
+          ? fixAttachments(note.attachments) 
+          : []);
+    
+    res.json(attachmentsToReturn);
   } catch (error) {
-    console.error('Add attachment error:', error);
-    res.status(500).json({ message: 'Failed to add attachment' });
+    console.error('▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒');
+    console.error('[SERVER ATTACHMENT DEBUG] ✗✗✗ Error occurred!');
+    console.error('[SERVER ATTACHMENT DEBUG] Error:', error);
+    console.error('[SERVER ATTACHMENT DEBUG] Error message:', error.message);
+    console.error('[SERVER ATTACHMENT DEBUG] Error stack:', error.stack);
+    console.error('[SERVER ATTACHMENT DEBUG] Error code:', error.code);
+    
+    // If it's a duplicate key error, that's okay - just return success
+    if (error.code === 11000 || error.message?.includes('duplicate')) {
+      console.log('[SERVER ATTACHMENT DEBUG] Duplicate file record detected, continuing...');
+      if (note && note.attachments) {
+        console.log('[SERVER ATTACHMENT DEBUG] Returning attachments despite duplicate');
+        console.error('▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒');
+        return res.json(note.attachments);
+      }
+    }
+    
+    console.error('[SERVER ATTACHMENT DEBUG] Sending error response');
+    console.error('▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒');
+    res.status(500).json({ message: 'Failed to add attachment', error: error.message });
   }
 });
 
@@ -830,26 +1314,97 @@ router.post('/:id/attachments', auth, async (req, res) => {
 router.delete('/:id/attachments/:filename', auth, async (req, res) => {
   try {
     const note = await Note.findOne({ _id: req.params.id, userId: req.userId });
-    if (!note) return res.status(404).json({ message: 'Note not found' });
-    const filename = req.params.filename;
-    const attachmentIndex = note.attachments.findIndex(att => att.filename === filename);
-    if (attachmentIndex === -1) {
-      return res.status(404).json({ message: 'Attachment not found' });
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found' });
     }
-    // Remove from array
-    note.attachments.splice(attachmentIndex, 1);
-    await note.save();
-    // Optionally delete file from disk
+    
+    const filename = req.params.filename;
+    console.log('[DELETE ATTACHMENT] Attempting to delete:', { noteId: req.params.id, filename, userId: req.userId });
+    
+    // Initialize attachments array if it doesn't exist
+    if (!note.attachments || !Array.isArray(note.attachments)) {
+      console.log('[DELETE ATTACHMENT] Note has no attachments array, initializing');
+      note.attachments = [];
+      await note.save();
+      // Still try to delete the file from disk and File record
+    } else {
+      const attachmentIndex = note.attachments.findIndex(att => att.filename === filename);
+      if (attachmentIndex === -1) {
+        console.log('[DELETE ATTACHMENT] Attachment not found in note.attachments, but will still delete file');
+        // Don't return 404 - still try to delete the file from disk and File record
+      } else {
+        // Remove from array
+        note.attachments.splice(attachmentIndex, 1);
+        await note.save();
+        console.log('[DELETE ATTACHMENT] Removed attachment from note, remaining:', note.attachments.length);
+      }
+    }
+    
+    // Always try to delete the File record and physical file
+    const File = (await import('../models/File.js')).default;
+    
+    // Try to find file record by multiple criteria (filename is most reliable)
+    let fileRecord = null;
+    
+    // First try: exact filename match (most reliable)
+    fileRecord = await File.findOneAndDelete({ 
+      $or: [
+        { url: `/uploads/${filename}` },
+        { path: { $regex: filename, $options: 'i' } },
+        { name: filename },
+        { originalName: filename }
+      ],
+      uploadedBy: req.userId 
+    });
+    
+    if (fileRecord) {
+      console.log('[DELETE ATTACHMENT] ✓ Deleted File record by filename:', fileRecord._id, {
+        url: fileRecord.url,
+        path: fileRecord.path,
+        name: fileRecord.name
+      });
+    } else {
+      // Second try: without user constraint (in case of data inconsistency)
+      fileRecord = await File.findOneAndDelete({ 
+        $or: [
+          { url: `/uploads/${filename}` },
+          { path: { $regex: filename, $options: 'i' } },
+          { name: filename },
+          { originalName: filename }
+        ]
+      });
+      
+      if (fileRecord) {
+        console.log('[DELETE ATTACHMENT] ✓ Deleted File record (without user constraint):', fileRecord._id);
+      } else {
+        console.log('[DELETE ATTACHMENT] ⚠️ No File record found to delete for filename:', filename);
+        console.log('[DELETE ATTACHMENT] Searched for:', {
+          url: `/uploads/${filename}`,
+          filename: filename
+        });
+      }
+    }
+    
+    // Delete file from disk
     const filePath = path.join(process.cwd(), 'server/uploads', filename);
     try {
       await fs.unlink(filePath);
+      console.log('[DELETE ATTACHMENT] ✓ Deleted file from disk:', filename);
     } catch (err) {
-      // Ignore if file doesn't exist
+      if (err.code === 'ENOENT') {
+        console.log('[DELETE ATTACHMENT] File not found on disk (already deleted):', filename);
+      } else {
+        console.error('[DELETE ATTACHMENT] Error deleting file from disk:', err);
+      }
     }
-    res.json(note.attachments);
+    
+    res.json({ 
+      message: 'Attachment deleted successfully',
+      attachments: note.attachments || []
+    });
   } catch (error) {
-    console.error('Remove attachment error:', error);
-    res.status(500).json({ message: 'Failed to remove attachment' });
+    console.error('[DELETE ATTACHMENT] Remove attachment error:', error);
+    res.status(500).json({ message: 'Failed to remove attachment', error: error.message });
   }
 });
 
@@ -1142,27 +1697,84 @@ router.post('/:id/shared/verify-password', async (req, res) => {
 // PATCH endpoint to save canonical Yjs update
 router.patch('/:id/yjs-update', auth, async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id);
+    // Use lean() to fetch without Mongoose validation to avoid attachment validation errors
+    const note = await Note.findById(req.params.id).lean();
     if (!note) return res.status(404).json({ message: 'Note not found' });
+    
     const { yjsUpdate } = req.body;
     if (!yjsUpdate) return res.status(400).json({ message: 'Missing yjsUpdate' });
+    
     const yjsBuffer = Buffer.from(yjsUpdate, 'base64');
     // MongoDB document size limit is 16MB
     if (yjsBuffer.length > 15 * 1024 * 1024) {
       return res.status(413).json({ message: 'Yjs update too large to save' });
     }
-    // Simple lock to prevent race conditions (atomicity)
-    if (note._yjsLock) {
-      return res.status(429).json({ message: 'Another Yjs update is in progress' });
+    
+    // Use direct MongoDB update to bypass Mongoose validation completely
+    // This prevents validation errors with attachments or other fields
+    // Decode Yjs to derive title/preview for list view updates
+    const ydoc = new Y.Doc();
+    Y.applyUpdate(ydoc, new Uint8Array(yjsBuffer));
+    const yTitle = ydoc.getText('title');
+    const derivedTitle = (yTitle?.toString() || '').trim() || 'Untitled';
+    const plainText = extractPlainTextFromYjs(yjsUpdate);
+    const preview = plainText.length > 200 ? `${plainText.slice(0, 200)}...` : plainText;
+
+    const updatedAt = new Date();
+    await Note.collection.updateOne(
+      { _id: note._id },
+      { 
+        $set: { 
+          yjsUpdate: yjsBuffer,
+          title: derivedTitle,
+          preview,
+          updatedAt
+        }
+      }
+    );
+    
+    // Broadcast once per Yjs save instead of every keystroke
+    if (req.io) {
+      const broadcastPayload = {
+        _id: note._id.toString(),
+        noteId: note._id.toString(),
+        title: derivedTitle,
+        preview,
+        updatedAt
+      };
+      req.io.to(`note-${note._id}`).emit('note-updated', broadcastPayload);
+      req.io.emit('note-updated', broadcastPayload);
     }
-    note._yjsLock = true;
-    note.yjsUpdate = yjsBuffer;
-    await note.save();
-    note._yjsLock = false;
-    res.json({ message: 'Yjs update saved' });
+    
+    res.json({ message: 'Yjs update saved', title: derivedTitle, preview });
   } catch (error) {
-    console.error('Save Yjs update error:', error);
+    console.error('[YJS UPDATE ERROR] Save Yjs update error:', error);
+    console.error('[YJS UPDATE ERROR] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      noteId: req.params.id
+    });
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Toggle shortcut status for a note
+router.patch('/:id/shortcut', auth, async (req, res) => {
+  try {
+    const note = await Note.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { isShortcut: req.body.isShortcut },
+      { new: true }
+    );
+
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found' });
+    }
+
+    res.json(note);
+  } catch (error) {
+    console.error('Toggle shortcut error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

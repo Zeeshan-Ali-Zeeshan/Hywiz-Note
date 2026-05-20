@@ -26,7 +26,7 @@ const LiteEditor: React.FC = () => {
       fetchNote(noteId).then(n => {
         setNote(n);
         setIsSharedNote(false);
-      }).catch(async (error) => {
+      }).catch(async (err) => {
         // If it fails, try to fetch as a shared note
         try {
           const token = localStorage.getItem('token');
@@ -83,15 +83,15 @@ const LiteEditor: React.FC = () => {
       <div className="w-full max-w-[1200px] bg-[#232323] rounded-lg shadow-lg p-6 mt-8">
         {/* Action buttons for shared notes */}
         {isSharedNote && user && access && (
-          <div className="flex justify-between items-center mb-4 p-4 bg-[#2a2a2a] rounded-lg">
+          <div className="flex justify-between items-center mb-4 p-4 bg-gray-800 dark:bg-gray-900 black:bg-gray-900 rounded-lg border border-gray-700 dark:border-gray-800 black:border-gray-800">
             <div className="text-white">
-              <p className="text-sm text-gray-300">Shared Note</p>
+              <p className="text-sm text-gray-300 dark:text-gray-400 black:text-gray-400">Shared Note</p>
               {/* Title is now Yjs-powered below */}
               {access.canEdit && (
-                <p className="text-sm text-green-400">You have edit access</p>
+                <p className="text-sm text-green-400 dark:text-green-400 black:text-green-400">You have edit access</p>
               )}
               {access.canSave && (
-                <p className="text-sm text-blue-400">You have full access (can save to your account)</p>
+                <p className="text-sm text-blue-400 dark:text-blue-400 black:text-blue-400">You have full access (can save to your account)</p>
               )}
             </div>
             <div className="flex gap-3">
@@ -99,14 +99,14 @@ const LiteEditor: React.FC = () => {
                 <button
                   onClick={handleSaveToMyNotes}
                   disabled={saving}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {saving ? 'Saving...' : 'Save to My Notes'}
                 </button>
               )}
               <button
                 onClick={() => navigate('/dashboard')}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
               >
                 Open Full App
               </button>

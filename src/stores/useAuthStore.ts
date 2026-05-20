@@ -8,10 +8,11 @@ interface User {
   email: string;
   avatar: string;
   preferences: {
-    theme: 'light' | 'dark' | 'auto';
+    theme: 'light' | 'black';
     backgroundImage: string;
     greeting: string;
     layoutStyle: 'comfortable' | 'compact' | 'spacious';
+    fontSize: 'small' | 'medium' | 'large';
     autoSaveInterval: number;
     defaultNotebook: string;
     emailNotifications: boolean;
@@ -24,7 +25,7 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  
+
   // Actions
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
@@ -48,18 +49,18 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await api.post('/auth/login', { email, password });
           const { token, user } = response.data;
-          
+
           console.log('Login successful, token received:', token ? 'YES' : 'NO');
           console.log('Token length:', token ? token.length : 0);
-          
+
           localStorage.setItem('token', token);
           console.log('Token stored in localStorage:', localStorage.getItem('token') ? 'YES' : 'NO');
-          
-          set({ 
-            user, 
-            token, 
-            isAuthenticated: true, 
-            isLoading: false 
+
+          set({
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false
           });
         } catch (error: any) {
           set({ isLoading: false });
@@ -72,13 +73,13 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await api.post('/auth/register', { name, email, password });
           const { token, user } = response.data;
-          
+
           localStorage.setItem('token', token);
-          set({ 
-            user, 
-            token, 
-            isAuthenticated: true, 
-            isLoading: false 
+          set({
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false
           });
         } catch (error: any) {
           set({ isLoading: false });
@@ -88,19 +89,19 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.removeItem('token');
-        set({ 
-          user: null, 
-          token: null, 
-          isAuthenticated: false 
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false
         });
       },
 
       clearToken: () => {
         localStorage.removeItem('token');
-        set({ 
-          user: null, 
-          token: null, 
-          isAuthenticated: false 
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false
         });
       },
 
@@ -113,20 +114,20 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await api.get('/auth/verify');
           console.log('Token verification successful');
-          set({ 
-            user: response.data.user, 
-            token, 
-            isAuthenticated: true, 
-            isLoading: false 
+          set({
+            user: response.data.user,
+            token,
+            isAuthenticated: true,
+            isLoading: false
           });
         } catch (error) {
           console.log('Token verification failed:', error);
           localStorage.removeItem('token');
-          set({ 
-            user: null, 
-            token: null, 
-            isAuthenticated: false, 
-            isLoading: false 
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false
           });
         }
       },
@@ -143,11 +144,11 @@ export const useAuthStore = create<AuthState>()(
           const response = await api.put('/users/preferences', preferences);
           const currentUser = get().user;
           if (currentUser) {
-            set({ 
-              user: { 
-                ...currentUser, 
-                preferences: { ...currentUser.preferences, ...response.data } 
-              } 
+            set({
+              user: {
+                ...currentUser,
+                preferences: { ...currentUser.preferences, ...response.data }
+              }
             });
           }
         } catch (error: any) {
@@ -157,7 +158,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         token: state.token,
         user: state.user,
         isAuthenticated: state.isAuthenticated

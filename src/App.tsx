@@ -12,7 +12,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AllNotes from './pages/AllNotes';
 import Notebooks from './pages/Notebooks';
-import Tags from './pages/Tags';
+
 
 import Calendar from './pages/Calendar';
 import Shortcuts from './pages/Shortcuts';
@@ -22,18 +22,22 @@ import Trash from './pages/Trash';
 import LiteEditor from './pages/LiteEditor';
 import Layout from './components/layout/Layout';
 import SearchModal from './components/modals/SearchModal';
-import { CustomizeModal } from './components/modals/CustomizeModal';
+// import { CustomizeModal } from './components/modals/CustomizeModal';
+import Settings from './pages/Settings';
 import { KeyboardShortcutsModal } from './components/modals/KeyboardShortcutsModal';
 import { ImportExportModal } from './components/modals/ImportExportModal';
 import NoteTemplates from './components/notes/NoteTemplates';
 import NotebookNotes from './pages/NotebookNotes';
+import WorkspaceView from './pages/WorkspaceView';
 import Templates from './pages/Templates';
+import Files from './pages/Files';
+import Tasks from './pages/Tasks';
 
 function App() {
   const { isLoading, verifyToken, isAuthenticated } = useAuthStore();
-  const { 
-    searchModalOpen, 
-    templatesModalOpen, 
+  const {
+    searchModalOpen,
+    templatesModalOpen,
     keyboardShortcutsModalOpen,
     importExportMode
   } = useUIStore();
@@ -44,9 +48,30 @@ function App() {
     verifyToken();
   }, [verifyToken]);
 
+  // Sync user preferences to UI store
+  useEffect(() => {
+    const { user } = useAuthStore.getState();
+    if (user?.preferences) {
+      if (user.preferences.fontSize) {
+        useUIStore.getState().setFontSize(user.preferences.fontSize);
+      }
+      if (user.preferences.layoutStyle) {
+        useUIStore.getState().setLayoutStyle(user.preferences.layoutStyle);
+      }
+      if (user.preferences.theme) {
+        // Auto-migrate legacy 'dark' or 'auto' to 'black'
+        const rawTheme = user.preferences.theme as string;
+        const safeTheme = (rawTheme === 'dark' || rawTheme === 'auto')
+          ? 'black'
+          : user.preferences.theme as 'light' | 'black';
+        useUIStore.getState().setTheme(safeTheme);
+      }
+    }
+  }, [useAuthStore.getState().user, verifyToken]);
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 black:bg-[#242424]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -55,7 +80,7 @@ function App() {
   return (
     <ThemeProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 black:bg-[#242424] transition-colors duration-200">
           <Toast message={message} type={type} isVisible={isVisible} />
           <Routes>
             {/* Standalone public shared note view (always outside layout) */}
@@ -65,13 +90,13 @@ function App() {
             <Route path="/lite-editor/:noteId" element={<LiteEditor />} />
 
             {/* Auth routes - redirect to dashboard if already authenticated */}
-            <Route 
-              path="/login" 
-              element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+            <Route
+              path="/login"
+              element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
             />
-            <Route 
-              path="/register" 
-              element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />} 
+            <Route
+              path="/register"
+              element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
             />
 
             {/* All other routes with sidebar/layout - require authentication */}
@@ -84,15 +109,22 @@ function App() {
                       <Route path="/" element={<Navigate to="/dashboard" replace />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/notes" element={<AllNotes />} />
+                      {/* Removed list page: workspaces grid is no longer used */}
+                      <Route path="/workspaces/:id" element={<WorkspaceView />} />
                       <Route path="/notebooks" element={<Notebooks />} />
                       <Route path="/notebooks/:id" element={<NotebookNotes />} />
-                      <Route path="/tags" element={<Tags />} />
+                      <Route path="/files" element={<Files />} />
+                      <Route path="/tasks" element={<Tasks />} />
 
                       <Route path="/calendar" element={<Calendar />} />
                       <Route path="/shortcuts" element={<Shortcuts />} />
                       <Route path="/shared" element={<SharedWithMe />} />
+                      <Route path="/shared-with-me" element={<SharedWithMe />} />
+                      <Route path="/spaces" element={<WorkspaceView />} />
+                      <Route path="/tags" element={<AllNotes />} />
                       <Route path="/trash" element={<Trash />} />
                       <Route path="/templates" element={<Templates />} />
+                      <Route path="/settings" element={<Settings />} />
                     </Routes>
                   </Layout>
                 ) : (
@@ -104,7 +136,8 @@ function App() {
 
           {/* Modals */}
           <SearchModal isOpen={searchModalOpen} onClose={() => useUIStore.getState().toggleSearchModal()} />
-          <CustomizeModal />
+          {/* Customize modal left for legacy entry; consider removing if not used anymore */}
+          {/* <CustomizeModal /> */}
           <KeyboardShortcutsModal isOpen={keyboardShortcutsModalOpen} onClose={() => useUIStore.getState().toggleKeyboardShortcutsModal()} />
           <ImportExportModal mode={importExportMode} />
           <NoteTemplates isOpen={templatesModalOpen} onClose={() => useUIStore.getState().toggleTemplatesModal()} />

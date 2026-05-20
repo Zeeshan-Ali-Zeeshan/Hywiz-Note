@@ -600,10 +600,7 @@ export const NoteTemplates: React.FC<NoteTemplatesProps> = ({ isOpen, onClose })
   const handleCreateFromTemplate = async (template: Template) => {
     try {
       const newNote = await createNote({
-        title: template.name,
-        content: template.content,
-        plainTextContent: template.content.replace(/<[^>]*>/g, '').trim(),
-        tags: template.tags.map(tag => ({ _id: tag, name: tag, color: '#6B7280' }))
+        tags: template.tags
       });
 
       setCurrentNote(newNote);

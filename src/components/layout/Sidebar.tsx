@@ -1,50 +1,95 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Search, 
-  Plus, 
-  Home, 
-  Zap, 
-  FileText, 
-  Book, 
-  Users, 
-  Bell, 
-  Tag, 
-  Trash2, 
-  HelpCircle,
+import {
+  Home,
+  Star,
+  FileText,
+  Book,
+  Users,
+  Tag as TagIcon,
+  Trash2,
   ChevronDown,
   Settings,
   Menu,
   Calendar,
   BookOpen,
-  ChevronLeft, // Add ChevronLeft for collapse/expand
-  ChevronRight, // Add ChevronRight for collapse/expand
+  ChevronLeft,
+  Package,
+  Plus,
+  Folder,
+  CheckSquare,
+  NotebookTabs,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useNotesStore } from '../../stores/useNotesStore';
 import { useUIStore } from '../../stores/useUIStore';
 import { useNotebooksStore } from '../../stores/useNotebooksStore';
+import { useWorkspacesStore } from '../../stores/useWorkspacesStore';
+import { useTagsStore, Tag } from '../../stores/useTagsStore';
+import { useTagsModal } from '../../hooks/useTagsModal';
+import { TagsModal } from '../modals/TagsModal';
+import logo from './logo.png';
+
 
 const navigationItems = [
-  { id: 'dashboard', name: 'Home', icon: Home, path: '/' },
-  { id: 'shortcuts', name: 'Shortcuts', icon: Zap, path: '/shortcuts', badge: 3 },
-  { id: 'notes', name: 'Notes', icon: FileText, path: '/notes' },
-  { id: 'notebooks', name: 'Notebooks', icon: Book, path: '/notebooks' },
-  { id: 'templates', name: 'Templates', icon: BookOpen, path: '/templates' },
-  { id: 'shared', name: 'Shared with Me', icon: Users, path: '/shared' },
-
-  { id: 'calendar', name: 'Calendar', icon: Calendar, path: '/calendar' },
-  { id: 'tags', name: 'Tags', icon: Tag, path: '/tags' },
-  { id: 'trash', name: 'Trash', icon: Trash2, path: '/trash' }
+  { id: 'dashboard', name: 'Home', icon: Home, path: '/dashboard', color: 'text-blue-600' },
+  { id: 'shortcuts', name: 'Shortcuts', icon: Star, path: '/shortcuts', badge: 3, color: 'text-yellow-500' },
+  { id: 'notes', name: 'Notes', icon: FileText, path: '/notes', color: 'text-green-600' },
+  { id: 'notebooks', name: 'Notebooks', icon: NotebookTabs, path: '/notebooks', color: 'text-purple-600 dark:text-purple-300 black:text-purple-200' },
+  { id: 'files', name: 'Files', icon: Folder, path: '/files', color: 'text-blue-500' },
+  { id: 'tasks', name: 'Tasks', icon: CheckSquare, path: '/tasks', color: 'text-emerald-600' },
+  { id: 'templates', name: 'Templates', icon: BookOpen, path: '/templates', color: 'text-orange-600' },
+  { id: 'shared', name: 'Shared with Me', icon: Users, path: '/shared', color: 'text-indigo-600' },
+  { id: 'calendar', name: 'Calendar', icon: Calendar, path: '/calendar', color: 'text-red-600' },
+  { id: 'tags', name: 'Tags', icon: TagIcon, path: '', color: 'text-pink-600' },
+  { id: 'trash', name: 'Trash', icon: Trash2, path: '/trash', color: 'text-gray-600' }
 ];
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { createNote, setCurrentNote, notes, fetchNotes } = useNotesStore();
-  const { openCustomizeModal, toggleSearchModal } = useUIStore();
+  const { toggleSearchModal } = useUIStore();
   const { notebooks, createNotebook, fetchNotebooks, setCurrentNotebook } = useNotebooksStore();
+  const { workspaces, fetchWorkspaces, createWorkspace } = useWorkspacesStore();
+  const { tags, fetchTags, createTag, deleteTag, updateTag } = useTagsStore();
+  const { isTagsModalOpen, openTagsModal, closeTagsModal } = useTagsModal();
+
+  // Wrapper functions for tags modal
+  const handleAddTag = async (tag: Partial<Tag>) => {
+    try {
+      const newTag = await createTag(tag);
+      await fetchTags(); // Refresh tags
+      return newTag;
+    } catch (error) {
+      console.error('Failed to create tag:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteTag = async (tagId: string) => {
+    try {
+      await deleteTag(tagId);
+      await fetchTags(); // Refresh tags
+    } catch (error) {
+      console.error('Failed to delete tag:', error);
+      throw error;
+    }
+  };
+
+  const handleEditTag = async (tagId: string, tag: Partial<Tag>) => {
+    try {
+      const updatedTag = await updateTag(tagId, tag);
+      await fetchTags(); // Refresh tags
+      return updatedTag;
+    } catch (error) {
+      console.error('Failed to update tag:', error);
+      throw error;
+    }
+  };
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [notebooksDropdownOpen, setNotebooksDropdownOpen] = useState(false);
@@ -52,36 +97,61 @@ export const Sidebar: React.FC = () => {
   const [creatingNotebook, setCreatingNotebook] = useState(false);
   const [showNotebookModal, setShowNotebookModal] = useState(false);
 
-  // Fetch notebooks on mount
-  React.useEffect(() => { fetchNotebooks(); }, [fetchNotebooks]);
+  // Workspace state
+  const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
+
+  // Workspace creation handler
+  const handleCreateWorkspace = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWorkspaceName.trim()) return;
+
+    setCreatingWorkspace(true);
+    try {
+      const newWorkspace = await createWorkspace({
+        name: newWorkspaceName.trim(),
+        description: '',
+        icon: 'briefcase',
+        color: '#3B82F6'
+      });
+      setNewWorkspaceName('');
+      setShowCreateWorkspaceModal(false);
+      navigate(`/workspaces/${newWorkspace._id}`);
+    } catch (error) {
+      console.error('Failed to create workspace:', error);
+    } finally {
+      setCreatingWorkspace(false);
+    }
+  };
+
+  // Fetch notebooks, tags, and workspaces on mount
+  React.useEffect(() => {
+    fetchNotebooks();
+    fetchTags();
+    fetchWorkspaces();
+  }, [fetchNotebooks, fetchTags, fetchWorkspaces]);
 
   const handleCreateNote = async () => {
     try {
-      // Check if user is authenticated
       if (!user) {
         console.error('User not authenticated');
         navigate('/login');
         return;
       }
-      
+
       console.log('Creating new note...');
       const newNote = await createNote({
-        title: '',
-        // content: '',
-        // plainTextContent: ''
+        // title: '',
       });
-      
+
       console.log('Note created, navigating to editor...');
-      
-      // Set the current note in the store
+
       setCurrentNote(newNote);
-      
-      // Navigate to notes page with the new note selected
       navigate(`/notes?note=${newNote._id}`);
       setIsMobileOpen(false);
     } catch (error) {
       console.error('Failed to create note:', error);
-      // You might want to show a toast notification here
     }
   };
 
@@ -113,174 +183,140 @@ export const Sidebar: React.FC = () => {
   };
 
   const sidebarContent = (
-    <div className={`flex flex-col h-full ${isCollapsed ? 'w-16' : 'w-64'} bg-[#202124] border-r border-[#23272B] font-[Segoe UI,Helvetica Neue,Arial,sans-serif] transition-all duration-300 relative`}> 
-      {/* Floating Chevron Button */}
-      <button
-        className="hidden lg:flex items-center justify-center absolute z-20 top-1/2 -right-3 transform -translate-y-1/2 w-8 h-8 rounded-full bg-[#23272B] shadow-lg border border-[#23272B] hover:bg-[#23272B]/90 focus:bg-[#23272B]/90 transition-colors group focus:outline-none"
-        style={{ boxShadow: '0 2px 12px 0 rgba(0,0,0,0.13)' }}
-        onClick={() => setIsCollapsed((v) => !v)}
-        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        tabIndex={0}
-      >
-        <span className="flex items-center justify-center transition-transform duration-300">
-          {isCollapsed ? (
-            <ChevronRight className="w-5 h-5 text-[#A3A7AB] group-hover:text-white group-focus:text-white transition-colors" />
-          ) : (
-            <ChevronLeft className="w-5 h-5 text-[#A3A7AB] group-hover:text-white group-focus:text-white transition-colors" />
-          )}
-        </span>
-      </button>
-      {/* User Profile */}
-      <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''} px-2 sm:px-4 py-4 border-b border-[#23272B]`}> 
-        <div className="w-10 h-10 bg-[#4285f4] rounded-full flex items-center justify-center text-base font-semibold text-white shadow-sm">
-          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-        </div>
-        {!isCollapsed && (
-          <div className="flex-1 min-w-0 ml-3">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold truncate text-white">{user?.name || 'User'}</span>
-              <ChevronDown className="w-4 h-4 text-[#A3A7AB] flex-shrink-0" />
+    <div className={`flex flex-col h-full ${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-900 black:bg-[#181818] shadow-lg z-10 transition-all duration-300 relative`}>
+      <div className="p-3">
+        {/* Header: Logo + Collapse Toggle */}
+        <div className={`flex items-center mb-6 ${isCollapsed ? 'flex-col space-y-4 items-center' : 'justify-between'}`}>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+              <img src={logo} alt="Logo" className="w-6 h-5" />
             </div>
-            <div className="text-xs text-[#A3A7AB] truncate">{user?.email || 'user@example.com'}</div>
+            {!isCollapsed && <span className="font-bold text-base text-gray-800 dark:text-gray-100 black:text-gray-100 truncate">Hywiz Note</span>}
           </div>
-        )}
-      </div>
-      {/* Search Bar */}
-      <div className={`py-3 ${isCollapsed ? 'px-1' : 'px-4'}`}> 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A3A7AB]" />
-          <input
-            type="text"
-            placeholder="Search"
-            onClick={handleSearchClick}
-            className={`w-full h-10 bg-[#23272B] text-white ${isCollapsed ? 'pl-10 pr-0' : 'pl-10 pr-3'} rounded-lg text-sm border border-[#23272B] focus:outline-none focus:border-[#4285f4] cursor-pointer ${isCollapsed ? 'opacity-0 pointer-events-none' : ''}`}
-            readOnly
-          />
-        </div>
-      </div>
-      {/* New Note Button */}
-      <div className={`pb-3 ${isCollapsed ? 'px-1' : 'px-4'}`}> 
-        <button 
-          onClick={handleCreateNote}
-          className={`w-full h-10 bg-[#00A82D] hover:bg-[#009A28] focus:bg-[#009A28] text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${isCollapsed ? 'justify-center' : ''} focus:outline-none`}
-        >
-          <Plus className="w-5 h-5" />
-          {!isCollapsed && <span>New Note</span>}
-        </button>
-      </div>
-      {/* Quick Actions (placeholder for future) */}
-      <div className={`pb-3 ${isCollapsed ? 'px-1' : 'px-4'}`}> 
-        <div className="grid grid-cols-2 gap-2">
-          <button className="bg-[#23272B] hover:bg-[#23272B]/80 focus:bg-[#23272B]/90 text-[#A3A7AB] h-10 rounded-lg text-sm font-normal flex items-center justify-center gap-2 border border-[#23272B] transition-colors focus:outline-none">
-            <Zap className="w-5 h-5" />
-            {!isCollapsed && <span>Task</span>}
-          </button>
-          <button className="bg-[#23272B] hover:bg-[#23272B]/80 focus:bg-[#23272B]/90 text-[#A3A7AB] h-10 rounded-lg text-sm font-normal flex items-center justify-center gap-2 border border-[#23272B] transition-colors focus:outline-none">
-            <Calendar className="w-5 h-5" />
-            {!isCollapsed && <span>Event</span>}
+          {/* Modern Collapse Toggle */}
+          <button
+            className={`hidden lg:flex items-center justify-center w-6 h-6 rounded-lg text-gray-500 dark:text-gray-400 black:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 black:hover:bg-[#2a2a2a] hover:text-gray-800 dark:hover:text-gray-100 black:hover:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1`}
+            onClick={() => setIsCollapsed((v) => !v)}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen className="w-5 h-5" />
+            ) : (
+              <PanelLeftClose className="w-5 h-5" />
+            )}
           </button>
         </div>
-      </div>
-      {/* Navigation Items */}
-      <nav className="flex-1 overflow-y-auto scrollbar-hide">
-        <ul className="flex flex-col gap-1">
-          {navigationItems.map((item, idx) => {
-            const IconComponent = item.icon;
-            const isActive = location.pathname === item.path;
-            if (item.id === 'notebooks') {
-              return (
-                <React.Fragment key={item.id}>
-                  <li className="flex flex-col">
-                    <button
-                      onClick={() => setNotebooksDropdownOpen((v) => !v)}
-                      className={`flex items-center gap-3 h-10 ${isCollapsed ? 'px-1 justify-center' : 'px-4'} rounded-lg text-sm font-normal transition-colors w-full text-left ${
-                        isActive
-                          ? 'bg-[#23272B] text-white shadow'
-                          : 'text-[#A3A7AB] hover:bg-[#23272B] hover:text-white focus:bg-[#23272B] focus:text-white'
-                      } focus:outline-none`}
+
+        {/* Navigation */}
+        <div className="space-y-4">
+          <div>
+            {!isCollapsed && <h3 className="text-xs font-bold text-gray-800 mb-3">Navigations</h3>}
+            <div className="space-y-1">
+              {navigationItems.map((item) => {
+                const IconComponent = item.icon;
+                const isActive = location.pathname === item.path;
+
+                if (item.id === 'notebooks') {
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleNavigation(item.path)}
+                      className={`flex items-center p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 black:hover:bg-[#2a2a2a] cursor-pointer ${isCollapsed ? 'justify-center' : 'space-x-2'}`}
                     >
-                      <IconComponent className="w-5 h-5" />
-                      {!isCollapsed && <span className="truncate">{item.name}</span>}
-                      {!isCollapsed && <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${notebooksDropdownOpen ? 'rotate-180' : ''}`} />}
-                    </button>
-                    {/* Inline notebooks list */}
-                    {!isCollapsed && notebooksDropdownOpen && (
-                      <ul className="ml-8 mt-1">
-                        {notebooks.map((nb) => (
-                          <li key={nb._id} className="text-[#A3A7AB] hover:text-white cursor-pointer py-1 text-xs md:text-sm" onClick={() => {
-                            setCurrentNotebook(nb);
-                            navigate(`/notebooks/${nb._id}`);
-                          }}>{nb.name}</li>
-                        ))}
-                        <li>
-                          <button onClick={() => setShowNotebookModal(true)} className="text-[#4285f4] hover:underline text-xs md:text-sm mt-1">+ New Notebook</button>
-                        </li>
-                      </ul>
-                    )}
-                  </li>
-                </React.Fragment>
-              );
-            }
-            // Default nav item
-            return (
-              <li key={item.id}>
-                <button
-                  onClick={async () => {
-                    if (item.id === 'notes') {
-                      if (!notes || notes.length === 0) {
-                        await fetchNotes();
-                      }
-                      const firstNote = notes && notes.length > 0 ? notes[0] : null;
-                      if (firstNote) {
-                        navigate(`/notes?note=${firstNote._id}`);
+                      <IconComponent className={`w-4 h-4 ${item.color} shrink-0`} />
+                      {!isCollapsed && <span className="font-bold text-xs text-gray-800 dark:text-gray-200 black:text-gray-200">{item.name}</span>}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      if (item.id === 'notes') {
+                        if (!notes || notes.length === 0) {
+                          fetchNotes();
+                        }
+                        const firstNote = notes && notes.length > 0 ? notes[0] : null;
+                        if (firstNote) {
+                          navigate(`/notes?note=${firstNote._id}`);
+                        } else {
+                          navigate(item.path);
+                        }
+                        setIsMobileOpen(false);
+                      } else if (item.id === 'tags') {
+                        // Open tags modal instead of navigating
+                        openTagsModal();
+                        setIsMobileOpen(false);
                       } else {
-                        navigate(item.path);
+                        handleNavigation(item.path);
                       }
-                      setIsMobileOpen(false);
-                    } else {
-                      handleNavigation(item.path);
-                    }
-                  }}
-                  className={`flex items-center gap-3 h-10 ${isCollapsed ? 'px-1 justify-center' : 'px-4'} rounded-lg text-sm font-normal transition-colors w-full text-left ${
-                    isActive 
-                      ? 'bg-[#23272B] text-white shadow'
-                      : 'text-[#A3A7AB] hover:bg-[#23272B] hover:text-white focus:bg-[#23272B] focus:text-white'
-                  } focus:outline-none`}
-                >
-                  <IconComponent className="w-5 h-5" />
-                  {!isCollapsed && <span className="truncate">{item.name}</span>}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-      {/* Bottom Section */}
-      <div className={`py-4 border-t border-[#23272B] flex flex-col gap-2 ${isCollapsed ? 'px-1' : 'px-4'}`}> 
-        <button
-          onClick={() => {
-            openCustomizeModal();
-            setIsMobileOpen(false);
-          }}
-          className={`flex items-center gap-3 h-10 ${isCollapsed ? 'px-1 justify-center' : 'px-4'} rounded-lg text-sm text-[#A3A7AB] hover:text-white hover:bg-[#23272B] focus:bg-[#23272B] focus:text-white transition-colors w-full text-left focus:outline-none`}
-        >
-          <Settings className="w-5 h-5" />
-          {!isCollapsed && <span>Settings</span>}
-        </button>
-        <div className={`flex items-center gap-3 h-10 ${isCollapsed ? 'px-1 justify-center' : 'px-4'} text-sm text-[#A3A7AB]`}>
-          <HelpCircle className="w-5 h-5" />
-          {!isCollapsed && <span>Need help?</span>}
+                    }}
+                    className={`flex items-center p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 black:hover:bg-[#2a2a2a] cursor-pointer ${isCollapsed ? 'justify-center' : 'space-x-2'}`}
+                  >
+                    <IconComponent className={`w-4 h-4 ${item.color} shrink-0`} />
+                    {!isCollapsed && <span className="font-bold text-xs text-gray-800 dark:text-gray-200 black:text-gray-200">{item.name}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            {!isCollapsed && <h3 className="text-xs font-bold text-gray-800 dark:text-gray-200 black:text-gray-200 mb-3">Workspaces</h3>}
+            <div className="space-y-1">
+              {workspaces && workspaces.length > 0 ? (
+                <>
+                  {workspaces.slice(0, 3).map((workspace) => (
+                    <div key={workspace._id} className={`flex items-center p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 black:border-[#3a3a3a] bg-gray-50 dark:bg-gray-800 black:bg-[#2f2f2f] hover:bg-gray-100 dark:hover:bg-gray-700 black:hover:bg-[#2a2a2a] cursor-pointer transition-colors ${isCollapsed ? 'justify-center' : 'gap-2'}`} onClick={() => navigate(`/workspaces/${workspace._id}`)}>
+                      <div className="w-4 h-4 rounded flex items-center justify-center shrink-0">
+                        <Package className="w-3 h-3" style={{ color: workspace.color }} />
+                      </div>
+                      {!isCollapsed && <span className="font-medium text-xs text-gray-800 dark:text-gray-200 black:text-gray-200 truncate">{workspace.name}</span>}
+                    </div>
+                  ))}
+                  {!isCollapsed && (
+                    <div className="space-y-1 pt-1">
+                      <button
+                        onClick={() => setShowCreateWorkspaceModal(true)}
+                        className="w-full h-8 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 border border-dashed border-gray-300 dark:border-gray-600 black:border-[#3a3a3a] text-gray-700 dark:text-gray-200 black:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 black:hover:bg-[#2a2a2a] transition-colors"
+                        title="Create a new workspace"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Create Workspace</span>
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                !isCollapsed && (
+                  <button
+                    onClick={() => setShowCreateWorkspaceModal(true)}
+                    className="w-full h-8 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 border border-dashed border-gray-300 dark:border-gray-600 black:border-[#3a3a3a] text-gray-700 dark:text-gray-200 black:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 black:hover:bg-[#2a2a2a] transition-colors"
+                    title="Create a new workspace"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Create Workspace</span>
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div
+              onClick={() => {
+                navigate('/settings');
+                setIsMobileOpen(false);
+              }}
+              className={`flex items-center p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer ${isCollapsed ? 'justify-center' : 'space-x-2'}`}
+            >
+              <Settings className="w-4 h-4 text-gray-700 shrink-0" />
+              {!isCollapsed && <span className="font-bold text-xs text-gray-800">Settings</span>}
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            logout();
-            setIsMobileOpen(false);
-          }}
-          className={`flex items-center gap-3 h-10 ${isCollapsed ? 'px-1 justify-center' : 'px-4'} rounded-lg text-sm text-[#A3A7AB] hover:text-white hover:bg-[#23272B] focus:bg-[#23272B] focus:text-white transition-colors w-full text-left focus:outline-none`}
-        >
-          {!isCollapsed && <span>Sign Out</span>}
-          <span className="sr-only">Sign Out</span>
-        </button>
       </div>
     </div>
   );
@@ -297,32 +333,79 @@ export const Sidebar: React.FC = () => {
 
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
         />
       )}
 
       {/* Desktop Sidebar */}
-      <div className={`hidden lg:flex bg-gray-800 text-white flex-col h-full transition-all duration-300 ${
-        isCollapsed ? 'w-16' : 'w-64'
-      }`}>
+      <div className={`hidden lg:flex bg-white dark:bg-gray-900 black:bg-[#181818] text-gray-800 flex-col h-full transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'
+        }`}>
         {sidebarContent}
       </div>
 
       {/* Mobile Sidebar */}
-      <div className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 text-white flex flex-col transform transition-transform duration-300 ${
-        isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 black:bg-[#181818] text-gray-800 flex flex-col transform transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
         {/* Mobile Close Button */}
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="absolute top-3 right-3 z-50 p-2 rounded-full bg-[#23272B] hover:bg-[#23272B]/90 focus:bg-[#23272B]/90 text-white focus:outline-none shadow-lg"
+          className="absolute top-3 right-3 z-50 p-2 rounded-full bg-gray-200 hover:bg-gray-300 focus:bg-gray-300 text-gray-800 focus:outline-none shadow-lg"
           aria-label="Close sidebar"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         {sidebarContent}
       </div>
+
+      {/* Tags Modal */}
+      <TagsModal
+        isOpen={isTagsModalOpen}
+        onClose={closeTagsModal}
+        tags={tags}
+        onAddTag={handleAddTag}
+        onDeleteTag={handleDeleteTag}
+        onEditTag={handleEditTag}
+      />
+
+      {/* Create Workspace Modal */}
+      {showCreateWorkspaceModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Create New Work Space</h3>
+            <form onSubmit={handleCreateWorkspace} className="space-y-4">
+              <div>
+                <label htmlFor="workspaceName" className="block text-sm font-medium text-gray-700">Name</label>
+                <input
+                  type="text"
+                  id="workspaceName"
+                  value={newWorkspaceName}
+                  onChange={(e) => setNewWorkspaceName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., My Project"
+                  required
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateWorkspaceModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingWorkspace}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  {creatingWorkspace ? 'Creating...' : 'Create Work Space'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

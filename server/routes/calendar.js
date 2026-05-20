@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import CalendarEvent from '../models/Calendar.js';
 import auth from '../middleware/auth.js';
 
@@ -113,6 +114,9 @@ router.get('/month/:year/:month', auth, async (req, res) => {
 // Create a new calendar event
 router.post('/', auth, async (req, res) => {
   try {
+    console.log('Creating calendar event with data:', req.body);
+    console.log('User ID from auth:', req.userId);
+    
     const {
       title,
       description,
@@ -127,6 +131,17 @@ router.post('/', auth, async (req, res) => {
       recurring,
       attendees
     } = req.body;
+
+    // Validate required fields
+    if (!title) {
+      return res.status(400).json({ message: 'Title is required' });
+    }
+    if (!startTime) {
+      return res.status(400).json({ message: 'Start time is required' });
+    }
+    if (!endTime) {
+      return res.status(400).json({ message: 'End time is required' });
+    }
 
     const event = new CalendarEvent({
       title,
@@ -144,14 +159,19 @@ router.post('/', auth, async (req, res) => {
       attendees
     });
 
+    console.log('Calendar event object before save:', event);
+
     const savedEvent = await event.save();
     await savedEvent.populate('noteId', 'title');
 
+    console.log('Calendar event saved successfully:', savedEvent);
 
     res.status(201).json(savedEvent);
   } catch (error) {
     console.error('Error creating calendar event:', error);
-    res.status(500).json({ message: 'Failed to create calendar event' });
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ message: 'Failed to create calendar event', error: error.message });
   }
 });
 
@@ -193,19 +213,36 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
     
+    console.log('Attempting to delete calendar event with ID:', id);
+    console.log('User ID from auth:', req.userId);
+    
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.log('Invalid ObjectId format:', id);
+      return res.status(400).json({ message: 'Invalid event ID format' });
+    }
+    
     const event = await CalendarEvent.findOneAndDelete({
       _id: id,
       userId: req.userId
     });
 
     if (!event) {
+      console.log('Event not found or user not authorized');
       return res.status(404).json({ message: 'Calendar event not found' });
     }
 
+    console.log('Calendar event deleted successfully:', event._id);
     res.json({ message: 'Calendar event deleted successfully' });
   } catch (error) {
     console.error('Error deleting calendar event:', error);
-    res.status(500).json({ message: 'Failed to delete calendar event' });
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Failed to delete calendar event', 
+      error: error.message,
+      details: error.stack 
+    });
   }
 });
 

@@ -14,11 +14,11 @@ interface UIState {
   templatesModalOpen: boolean;
   keyboardShortcutsModalOpen: boolean;
   darkMode: boolean;
-  compactMode: boolean;
+  layoutStyle: 'comfortable' | 'compact' | 'spacious';
   showToolbar: boolean;
   fontSize: 'small' | 'medium' | 'large';
-  theme: 'light' | 'dark' | 'auto';
-  
+  theme: 'light' | 'black';
+
   // Actions
   setCurrentPage: (page: string) => void;
   toggleSidebar: () => void;
@@ -33,10 +33,10 @@ interface UIState {
   toggleTemplatesModal: () => void;
   toggleKeyboardShortcutsModal: () => void;
   toggleDarkMode: () => void;
-  toggleCompactMode: () => void;
+  setLayoutStyle: (style: 'comfortable' | 'compact' | 'spacious') => void;
   toggleToolbar: () => void;
   setFontSize: (size: 'small' | 'medium' | 'large') => void;
-  setTheme: (theme: 'light' | 'dark' | 'auto') => void;
+  setTheme: (theme: 'light' | 'black') => void;
   setSelectedNoteIds: (ids: string[]) => void;
 }
 
@@ -55,55 +55,55 @@ export const useUIStore = create<UIState>()(
       templatesModalOpen: false,
       keyboardShortcutsModalOpen: false,
       darkMode: false,
-      compactMode: false,
+      layoutStyle: 'comfortable',
       showToolbar: true,
       fontSize: 'medium',
-      theme: 'auto',
-      
+      theme: 'light',
+
       setCurrentPage: (page: string) => set({ currentPage: page }),
-      
+
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-      
+
       openCustomizeModal: () => set({ customizeModalOpen: true }),
-      
+
       closeCustomizeModal: () => set({ customizeModalOpen: false }),
-      
+
       openImportExportModal: (mode: 'import' | 'export') => set({ importExportModalOpen: true, importExportMode: mode }),
-      
+
       closeImportExportModal: () => set({ importExportModalOpen: false }),
-      
-      openNoteEditor: (noteId?: string) => set({ 
+
+      openNoteEditor: (noteId?: string) => set({
         noteEditorOpen: true,
         currentPage: 'notes'
       }),
-      
+
       closeNoteEditor: () => set({ noteEditorOpen: false }),
-      
+
       toggleSearchModal: () => set((state) => ({ searchModalOpen: !state.searchModalOpen })),
-      
+
       setBulkActionsOpen: (open: boolean) => set({ bulkActionsOpen: open }),
-      
+
       toggleTemplatesModal: () => set((state) => ({ templatesModalOpen: !state.templatesModalOpen })),
-      
+
       toggleKeyboardShortcutsModal: () => set((state) => ({ keyboardShortcutsModalOpen: !state.keyboardShortcutsModalOpen })),
-      
+
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
-      
-      toggleCompactMode: () => set((state) => ({ compactMode: !state.compactMode })),
-      
+
+      setLayoutStyle: (style) => set({ layoutStyle: style }),
+
       toggleToolbar: () => set((state) => ({ showToolbar: !state.showToolbar })),
-      
+
       setFontSize: (size) => set({ fontSize: size }),
-      
+
       setTheme: (theme) => set({ theme }),
-      
+
       setSelectedNoteIds: (ids: string[]) => set({ selectedNoteIds: ids }),
     }),
     {
       name: 'ui-storage',
       partialize: (state) => ({
         darkMode: state.darkMode,
-        compactMode: state.compactMode,
+        layoutStyle: state.layoutStyle,
         showToolbar: state.showToolbar,
         fontSize: state.fontSize,
         theme: state.theme,

@@ -6,6 +6,7 @@ export interface Notebook {
   name: string;
   description: string;
   userId: string;
+  workspaceId: string;
   noteCount: number;
   color: string;
   icon: string;

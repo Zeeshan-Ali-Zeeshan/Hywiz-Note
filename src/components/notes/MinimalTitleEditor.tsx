@@ -38,7 +38,7 @@ const SingleLine = Paragraph.extend({
 });
 
 export const MinimalTitleEditor: React.FC<MinimalTitleEditorProps> = ({ ydoc, provider, initialTitle, readOnly = false, onTitleChange }) => {
-  // Use a unique Yjs fragment for the title
+  // Use a unique Yjs fragment for the title to avoid conflicts
   const yTitleFragment = ydoc.getXmlFragment('titleXml');
   const editor = useEditor({
     extensions: [
@@ -89,9 +89,27 @@ export const MinimalTitleEditor: React.FC<MinimalTitleEditorProps> = ({ ydoc, pr
       className={styles.minimalTitleEditor}
       onClick={handleContainerClick}
       tabIndex={0}
-      style={{ cursor: readOnly ? 'default' : 'text' }}
+      style={{ 
+        cursor: readOnly ? 'default' : 'text',
+        minHeight: '1.5rem',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center'
+      }}
     >
       <EditorContent editor={editor} ref={editorContentRef} />
+      {!editor?.getText() && (
+        <span 
+          style={{ 
+            color: '#9CA3AF', 
+            pointerEvents: 'none',
+            position: 'absolute',
+            left: '0px'
+          }}
+        >
+          Template Title
+        </span>
+      )}
     </div>
   );
 }; 

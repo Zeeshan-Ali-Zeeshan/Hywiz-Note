@@ -10,6 +10,7 @@ import nodemailer from 'nodemailer';
 import Note from './models/Note.js';
 import Template from './models/Template.js';
 import User from './models/User.js';
+import TaskSeries from './models/TaskSeries.js';  // Import TaskSeries to register the schema
 import { WebSocketServer } from 'ws';
 import { setupWSConnection } from 'y-websocket/bin/utils';
 import * as Y from 'yjs';
@@ -124,6 +125,7 @@ const schema = new Schema({ nodes, marks });
 import authRoutes from './routes/auth.js';
 import notesRoutes from './routes/notes.js';
 import notebooksRoutes from './routes/notebooks.js';
+import workspacesRoutes from './routes/workspaces.js';
 import tagsRoutes from './routes/tags.js';
 import sharingRoutes from './routes/sharing.js';
 
@@ -132,6 +134,8 @@ import searchRoutes from './routes/search.js';
 import uploadRoutes from './routes/upload.js';
 import usersRoutes from './routes/users.js';
 import templatesRoutes from './routes/templates.js';
+import filesRoutes from './routes/files.js';
+import tasksRoutes from './routes/tasks.js';
 
 const app = express();
 const server = createServer(app);
@@ -153,13 +157,61 @@ app.use(fileUpload({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
 }));
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(process.cwd(), 'server/uploads')));
+// Serve uploaded files with proper headers and video streaming support
+app.use('/uploads', (req, res, next) => {
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Range, Content-Range, Content-Length');
+  res.header('Accept-Ranges', 'bytes');
+
+  // Set proper Content-Type based on file extension
+  const filePath = req.path.toLowerCase();
+  if (filePath.endsWith('.mp4')) {
+    res.header('Content-Type', 'video/mp4');
+  } else if (filePath.endsWith('.webm')) {
+    res.header('Content-Type', 'video/webm');
+  } else if (filePath.endsWith('.avi')) {
+    res.header('Content-Type', 'video/avi');
+  } else if (filePath.endsWith('.mov')) {
+    res.header('Content-Type', 'video/quicktime');
+  } else if (filePath.endsWith('.mkv')) {
+    res.header('Content-Type', 'video/x-matroska');
+  }
+
+  next();
+}, express.static(path.join(process.cwd(), 'server/uploads'), {
+  // Enable proper video streaming
+  acceptRanges: true,
+  cacheControl: false,
+  etag: false,
+  lastModified: false
+}));
 
 // MongoDB connection
-mongoose.connect('mongodb+srv://zeeshantidi259:hyperking@cluster0.s17pj.mongodb.net/evernote-clone?retryWrites=true&w=majority')
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
+// Robust MongoDB connection with retry
+const connectWithRetry = () => {
+  console.log('Attempting to connect to MongoDB...');
+  mongoose.connect('mongodb+srv://zeeshantidi259:hyperking@cluster0.s17pj.mongodb.net/evernote-clone?retryWrites=true&w=majority', {
+    serverSelectionTimeoutMS: 5000 // Fail fast if no server found
+  })
+    .then(() => {
+      console.log('MongoDB connected successfully');
+
+      const PORT = process.env.PORT || 3001;
+      server.listen(PORT, () => {
+        console.log(`HTTP server running at http://localhost:${PORT}`);
+        console.log('Yjs WebSocket server running (integrated with Express backend)');
+      });
+    })
+    .catch(err => {
+      console.error('MongoDB connection error:', err.message);
+      console.log('Retrying connection in 5 seconds...');
+      setTimeout(connectWithRetry, 5000);
+    });
+};
+
+connectWithRetry();
 
 // Socket.io for real-time features
 io.on('connection', (socket) => {
@@ -237,7 +289,7 @@ yjsWss.on('connection', async (conn, req) => {
   // --- BEST PRACTICE ENFORCEMENT ---
   // Only seed the Yjs doc from the DB if the doc is empty.
   // Never reseed/overwrite a non-empty Yjs doc, to prevent duplication or data loss.
-  
+
   // Handle note seeding
   const noteMatch = roomName.match(/^note-(.+)$/);
   if (noteMatch) {
@@ -245,15 +297,15 @@ yjsWss.on('connection', async (conn, req) => {
     // Fetch note data
     const note = await Note.findById(noteId);
     const title = note ? note.title : '';
-    
+
     // Check if we need to seed the document
     const yXml = doc.getXmlFragment('prosemirror');
     const yTitle = doc.getText('title');
-    
+
     // Only seed if both fragments are empty (first time opening this note)
     if (yXml.length === 0 && yTitle.length === 0) {
       console.log('[YJS DEBUG] First time opening note', noteId, '- seeding from DB');
-      
+
       // Seed content with empty paragraph (content is now stored in YJS)
       const emptyParagraph = {
         type: 'paragraph',
@@ -266,7 +318,7 @@ yjsWss.on('connection', async (conn, req) => {
       };
       yXml.insert(0, [emptyParagraph]);
       console.log('[YJS DEBUG] Seeded note with empty paragraph (content now in YJS)');
-      
+
       // Seed title if Y.Text is empty
       if (title) {
         yTitle.insert(0, title);
@@ -277,7 +329,7 @@ yjsWss.on('connection', async (conn, req) => {
       console.log('[YJS DEBUG] Note', noteId, 'already has collaborative data - skipping seed');
     }
   }
-  
+
   // Handle template seeding
   const templateMatch = roomName.match(/^template-(.+)$/);
   if (templateMatch) {
@@ -286,40 +338,40 @@ yjsWss.on('connection', async (conn, req) => {
       // Fetch template data
       const template = await Template.findById(templateId);
       const title = template ? template.title : '';
-      
+
       console.log('[YJS DEBUG] Template title:', title);
-      
+
       // Check if we need to seed the document
       const yXml = doc.getXmlFragment('prosemirror');
       const yTitle = doc.getXmlFragment('title');
-      
+
       // Only seed if both fragments are empty (first time opening this template)
       if (yXml.length === 0 && yTitle.length === 0) {
         console.log('[YJS DEBUG] First time opening template', templateId, '- seeding from DB');
-      
-      // Seed content with empty paragraph (content is now stored in YJS)
-      const emptyParagraph = {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: ''
-          }
-        ]
-      };
-      yXml.insert(0, [emptyParagraph]);
-      console.log('[YJS DEBUG] Seeded template with empty paragraph (content now in YJS)');
-      
-      // Seed title if Y.XmlFragment is empty
-      if (title && title.trim()) {
-        yTitle.insert(0, title.trim());
-        console.log('[YJS DEBUG] Seeded Yjs title for template', templateId, 'with title from DB:', title);
+
+        // Seed content with empty paragraph (content is now stored in YJS)
+        const emptyParagraph = {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: ''
+            }
+          ]
+        };
+        yXml.insert(0, [emptyParagraph]);
+        console.log('[YJS DEBUG] Seeded template with empty paragraph (content now in YJS)');
+
+        // Seed title if Y.XmlFragment is empty
+        if (title && title.trim()) {
+          yTitle.insert(0, title.trim());
+          console.log('[YJS DEBUG] Seeded Yjs title for template', templateId, 'with title from DB:', title);
+        } else {
+          // Insert default title if none exists
+          yTitle.insert(0, 'Untitled Template');
+          console.log('[YJS DEBUG] Seeded Yjs title for template', templateId, 'with default title');
+        }
       } else {
-        // Insert default title if none exists
-        yTitle.insert(0, 'Untitled Template');
-        console.log('[YJS DEBUG] Seeded Yjs title for template', templateId, 'with default title');
-      }
-          } else {
         // Document already has data - this is normal for shared templates
         console.log('[YJS DEBUG] Template', templateId, 'already has collaborative data - skipping seed');
       }
@@ -334,10 +386,17 @@ yjsWss.on('connection', async (conn, req) => {
 
 console.log('Yjs WebSocket server running (integrated with Express backend)');
 
+// Top-level request logger for all incoming requests
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/notebooks', notebooksRoutes);
+app.use('/api/workspaces', workspacesRoutes);
 app.use('/api/tags', tagsRoutes);
 app.use('/api/sharing', sharingRoutes);
 
@@ -346,6 +405,8 @@ app.use('/api/search', searchRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/templates', templatesRoutes);
+app.use('/api/files', filesRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -353,13 +414,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Top-level request logger for all incoming requests
-app.use((req, res, next) => {
-  console.log(`[DEBUG] Incoming request: ${req.method} ${req.url}`);
-  next();
-});
-
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`HTTP server running at http://localhost:${PORT}`);
-});
+// Server startup logic moved to mongoose connection block

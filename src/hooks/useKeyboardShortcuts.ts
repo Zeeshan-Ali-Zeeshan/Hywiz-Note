@@ -116,12 +116,7 @@ export const useKeyboardShortcuts = () => {
             }
             break;
 
-          case '4':
-            if (ctrlKey || metaKey) {
-              event.preventDefault();
-              navigate('/tags');
-            }
-            break;
+
 
 
 

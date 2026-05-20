@@ -11,6 +11,11 @@ const notebookSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  workspaceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Workspace',
+    required: true
+  },
   noteCount: {
     type: Number,
     default: 0

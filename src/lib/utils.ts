@@ -1,4 +1,16 @@
 /**
+ * Utility function to combine class names
+ * @param inputs - Class names to combine
+ * @returns string - Combined class names
+ */
+export const cn = (...inputs: (string | undefined | null | boolean)[]): string => {
+  return inputs
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+};
+
+/**
  * Copy text to clipboard
  * @param text - The text to copy
  * @returns Promise<boolean> - True if successful, false otherwise

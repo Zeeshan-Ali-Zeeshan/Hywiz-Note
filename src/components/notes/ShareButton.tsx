@@ -333,7 +333,7 @@ export const ShareButton = forwardRef<HTMLButtonElement, ShareButtonProps>(
               setIsModalOpen((v) => !v);
             }
           }}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#232323] hover:bg-[#343434] text-white transition-colors ${className}`}
+          className={`flex items-center rounded-md bg-[#232323] hover:bg-[#343434] text-white transition-colors text-xsrounded-l-lg rounded-r-none bg-[#818cf8] hover:bg-[#6366f1] text-black px-2 h-8 border border-[#818cf8] border-r-0 focus:outline-none transition-all duration-200 text-sm font-medium flex items-center gap-2`}
           title="Share note"
         >
           <span className="text-sm font-medium">Share</span>
@@ -343,42 +343,42 @@ export const ShareButton = forwardRef<HTMLButtonElement, ShareButtonProps>(
         {actualOpen && createPortal(
           <div
             ref={dropdownRef || modalRef}
-            className="bg-[#181818] rounded-xl shadow-2xl border border-[#232323] w-96 max-h-[90vh] flex flex-col"
+            className="bg-[#181818] rounded-xl shadow-2xl border border-[#232323] w-72 max-h-[75vh] flex flex-col"
             style={dropdownStyle}
           >
             {/* Invite by Email */}
-            <div className="p-5 border-b border-[#232323]">
+            <div className="p-3 border-b border-[#232323]">
               <input
                 type="email"
                 value={newCollaborator}
                 onChange={(e) => setNewCollaborator(e.target.value)}
                 placeholder="Add name or email"
-                className={`w-full px-3 py-2 bg-[#232323] border rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-1.5 py-1 bg-[#232323] border rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs ${
                   newCollaborator.trim() && !isValidEmail(newCollaborator)
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-[#333]'
                 }`}
               />
-              <div className="flex items-center mt-3">
+              <div className="flex items-center mt-2">
                 <div className="relative flex-1">
                   <select
                     value={newCollaboratorPermission}
                     onChange={(e) => setNewCollaboratorPermission(e.target.value as 'view' | 'edit' | 'full')}
-                    className="w-full px-3 py-2 bg-[#232323] border border-[#333] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                    className="w-full px-1.5 py-1 bg-[#232323] border border-[#333] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none text-xs"
                   >
                     <option value="full">Full access</option>
                     <option value="edit">Can edit</option>
                     <option value="view">Can view</option>
                   </select>
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </span>
                 </div>
                 <button
                   onClick={addCollaborator}
                   disabled={!newCollaborator.trim() || !isValidEmail(newCollaborator) || isLoading}
-                  className="ml-3 px-4 py-2 bg-[#232323] border border-[#333] text-white rounded-md hover:bg-[#343434] disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ minWidth: 110 }}
+                  className="ml-2 px-2 py-1 bg-[#232323] border border-[#333] text-white rounded-md hover:bg-[#343434] disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                  style={{ minWidth: 90 }}
                 >
                   Send invite
                 </button>
@@ -389,12 +389,12 @@ export const ShareButton = forwardRef<HTMLButtonElement, ShareButtonProps>(
             </div>
 
             {/* People with access */}
-            <div className="p-5 border-b border-[#232323]">
-              <div className="text-xs text-gray-400 mb-2">People with access {collaborators.length + 1}</div>
-              <div className="space-y-2">
+            <div className="p-3 border-b border-[#232323]">
+              <div className="text-xs text-gray-400 mb-1.5">People with access {collaborators.length + 1}</div>
+              <div className="space-y-1.5">
                 {/* Owner always first */}
-                <div className="flex items-center gap-3 p-2 rounded hover:bg-[#232323]">
-                  <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold text-base">
+                <div className="flex items-center gap-1.5 p-1 rounded hover:bg-[#232323]">
+                  <div className="w-5 h-5 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold text-xs">
                     {isUserObject(currentNote?.userId) && currentNote?.userId?.name
                       ? currentNote.userId.name[0]?.toUpperCase()
                       : isUserObject(currentNote?.userId) && currentNote?.userId?.email
@@ -404,7 +404,7 @@ export const ShareButton = forwardRef<HTMLButtonElement, ShareButtonProps>(
                           : 'U'}
                   </div>
                   <div className="flex-1">
-                    <div className="text-white text-sm font-medium">{isUserObject(currentNote?.userId) && currentNote?.userId?.name
+                    <div className="text-white text-xs font-medium">{isUserObject(currentNote?.userId) && currentNote?.userId?.name
                       ? currentNote.userId.name
                       : 'You'} <span className="text-xs text-gray-400 ml-1">· You</span></div>
                     <div className="text-xs text-gray-400">{isUserObject(currentNote?.userId) && currentNote?.userId?.email
@@ -413,21 +413,21 @@ export const ShareButton = forwardRef<HTMLButtonElement, ShareButtonProps>(
                         ? currentNote.userId
                         : ''}</div>
                   </div>
-                  <div className="text-xs text-gray-400 mr-2">Owner</div>
+                  <div className="text-xs text-gray-400 mr-1.5">Owner</div>
                 </div>
                 {collaborators.map((c: Collaborator) => {
                   const emailStr = typeof c.email === 'string' ? c.email : '';
                   const userObj = isUserObject(c.userId) ? c.userId : undefined;
                   return (
-                    <div key={c._id} className="flex items-center gap-3 p-2 rounded hover:bg-[#232323]">
-                      <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold text-base">
+                    <div key={c._id} className="flex items-center gap-1.5 p-1 rounded hover:bg-[#232323]">
+                      <div className="w-5 h-5 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold text-xs">
                         {userObj && userObj.name ? userObj.name[0]?.toUpperCase() : (emailStr ? emailStr[0].toUpperCase() : 'U')}
                       </div>
                       <div className="flex-1">
-                        <div className="text-white text-sm font-medium">{userObj && userObj.name ? userObj.name : (emailStr || 'Unknown')}</div>
+                        <div className="text-white text-xs font-medium">{userObj && userObj.name ? userObj.name : (emailStr || 'Unknown')}</div>
                         <div className="text-xs text-gray-400">{userObj && userObj.email ? userObj.email : emailStr}</div>
                       </div>
-                      <div className="text-xs text-gray-400 mr-2 capitalize">
+                      <div className="text-xs text-gray-400 mr-1.5 capitalize">
                         {c.permission === 'full' ? 'Full access' : c.permission === 'edit' ? 'Can edit' : 'Can view'}
                       </div>
                       <button
@@ -435,7 +435,7 @@ export const ShareButton = forwardRef<HTMLButtonElement, ShareButtonProps>(
                         className="p-1 text-gray-400 hover:text-red-400"
                         title="Remove collaborator"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
                   );
@@ -444,9 +444,9 @@ export const ShareButton = forwardRef<HTMLButtonElement, ShareButtonProps>(
             </div>
 
             {/* Link sharing section */}
-            <div className="p-5">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-white flex-shrink-0" />
+            <div className="p-3">
+              <div className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-white flex-shrink-0" />
                 <div className="relative flex-1 min-w-0">
                   <select
                     value={selectValue}
@@ -466,23 +466,23 @@ export const ShareButton = forwardRef<HTMLButtonElement, ShareButtonProps>(
                         showToast('Sharing settings updated!', 'success');
                       }
                     }}
-                    className="px-3 py-2 bg-[#232323] border border-[#333] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none w-full"
-                    style={{ minWidth: 140 }}
+                    className="px-1.5 py-1 bg-[#232323] border border-[#333] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none w-full text-xs"
+                    style={{ minWidth: 120 }}
                   >
                     <option value="restricted">Restricted</option>
                     <option value="public-view">Anyone with the link can view</option>
                     <option value="public-edit">Anyone with the link can edit</option>
                   </select>
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </span>
                 </div>
                 <button
                   onClick={copyShareLink}
-                  className="px-4 py-2 bg-[#232323] border border-[#333] rounded-md text-white hover:bg-[#343434] flex items-center gap-2 flex-shrink-0"
-                  style={{ minWidth: 50 }}
+                  className="px-2 py-1 bg-[#232323] border border-[#333] rounded-md text-white hover:bg-[#343434] flex items-center gap-1.5 flex-shrink-0 text-xs"
+                  style={{ minWidth: 40 }}
                 >
-                  <LinkIcon className="w-5 h-5 text-white" />
+                  <LinkIcon className="w-4 h-4 text-white" />
                 </button>
               </div>
             </div>

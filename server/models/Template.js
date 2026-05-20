@@ -2,25 +2,7 @@ import mongoose from 'mongoose';
 import crypto from 'crypto';
 
 const templateSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  description: {
-    type: String,
-    default: '',
-    trim: true
-  },
-  category: {
-    type: String,
-    default: 'general',
-    trim: true
-  },
-  tags: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tag'
-  }],
+  // Only keep essential fields - title and content are now in Yjs
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -31,10 +13,6 @@ const templateSchema = new mongoose.Schema({
     default: false
   },
   isPinned: {
-    type: Boolean,
-    default: false
-  },
-  isArchived: {
     type: Boolean,
     default: false
   },
@@ -66,27 +44,20 @@ const templateSchema = new mongoose.Schema({
   shareExpiry: {
     type: Date
   },
-  usageCount: {
-    type: Number,
-    default: 0
-  },
-  rating: {
-    type: Number,
-    default: 0
-  },
-  ratingCount: {
-    type: Number,
-    default: 0
-  },
   yjsUpdate: {
-    type: Buffer, // Store the canonical Yjs update as a binary Buffer
+    type: Buffer, // Store the canonical Yjs update as a binary Buffer (contains title and content)
     required: false
   },
-  metadata: {
-    type: Map,
-    of: mongoose.Schema.Types.Mixed,
-    default: {}
-  }
+  // Keep fallback fields for backward compatibility during migration
+  title: {
+    type: String,
+    default: 'Untitled Template',
+    trim: true
+  },
+  tags: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tag'
+  }]
 }, {
   timestamps: true
 });
@@ -94,13 +65,11 @@ const templateSchema = new mongoose.Schema({
 // Indexes for better query performance
 templateSchema.index({ userId: 1, isDeleted: 1 });
 templateSchema.index({ userId: 1, isPinned: 1, updatedAt: -1 });
-templateSchema.index({ userId: 1, isArchived: 1 });
 templateSchema.index({ isPublic: 1, isDeleted: 1 });
 templateSchema.index({ shareLink: 1 });
 templateSchema.index({ 'collaborators.userId': 1, isDeleted: 1 });
 templateSchema.index({ tags: 1, isDeleted: 1 });
-templateSchema.index({ category: 1, isDeleted: 1 });
-templateSchema.index({ title: 'text', description: 'text' });
+templateSchema.index({ title: 'text' });
 
 // Generate share link
 templateSchema.methods.generateShareLink = function() {
@@ -153,19 +122,7 @@ templateSchema.methods.updateCollaboratorPermission = function(userId, permissio
   return Promise.reject(new Error('Collaborator not found'));
 };
 
-// Increment usage count
-templateSchema.methods.incrementUsage = function() {
-  this.usageCount += 1;
-  return this.save();
-};
-
-// Add rating
-templateSchema.methods.addRating = function(rating) {
-  const totalRating = (this.rating * this.ratingCount) + rating;
-  this.ratingCount += 1;
-  this.rating = totalRating / this.ratingCount;
-  return this.save();
-};
+// Methods for usage and rating tracking have been removed since these fields are no longer in the model
 
 // Pre-save middleware to generate share link if public
 templateSchema.pre('save', function(next) {

@@ -1,0 +1,262 @@
+/* Task List Styles */
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.task-item {
+  position: relative;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.task-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.task-item.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.task-item.completed {
+  opacity: 0.6;
+  background: #f9fafb;
+}
+
+.task-item.overdue {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.task-item.overdue .task-content {
+  color: #dc2626;
+}
+
+/* Task Content */
+.task-content {
+  margin-left: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.task-content p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Task Details */
+.task-details {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.task-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.task-detail-item.due-date {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.task-detail-item.due-date.overdue {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.task-detail-item.priority {
+  border: 1px solid;
+}
+
+.task-detail-item.priority.high {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.task-detail-item.priority.medium {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fed7aa;
+}
+
+.task-detail-item.priority.low {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+
+.task-detail-item.recurring {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.task-detail-item.reminder {
+  background: #faf5ff;
+  color: #9333ea;
+}
+
+/* Task Controls */
+.task-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.task-control-button {
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.task-control-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.task-control-button.delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* Task Details Panel */
+.task-details-panel {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.task-details-panel .form-group {
+  margin-bottom: 1rem;
+}
+
+.task-details-panel .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.task-details-panel label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.task-details-panel input,
+.task-details-panel select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  background: #ffffff;
+  color: #111827;
+}
+
+.task-details-panel input:focus,
+.task-details-panel select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Dark mode styles */
+.dark .task-item {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+.dark .task-item:hover {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+.dark .task-item.completed {
+  background: #111827;
+  opacity: 0.7;
+}
+
+.dark .task-item.overdue {
+  background: #1f1415;
+  border-color: #dc2626;
+}
+
+.dark .task-details-panel {
+  background: #111827;
+  border-color: #374151;
+}
+
+.dark .task-details-panel input,
+.dark .task-details-panel select {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+.dark .task-details-panel input:focus,
+.dark .task-details-panel select:focus {
+  border-color: #3b82f6;
+}
+
+/* Black theme styles */
+.black .task-item {
+  background: #242424;
+  border-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.black .task-item:hover {
+  background: #2a2a2a;
+  border-color: #4a4a4a;
+}
+
+.black .task-item.completed {
+  background: #1a1a1a;
+  opacity: 0.7;
+}
+
+.black .task-item.overdue {
+  background: #2a1a1a;
+  border-color: #dc2626;
+}
+
+.black .task-details-panel {
+  background: #1a1a1a;
+  border-color: #3a3a3a;
+}
+
+.black .task-details-panel input,
+.black .task-details-panel select {
+  background: #242424;
+  border-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.black .task-details-panel input:focus,
+.black .task-details-panel select:focus {
+  border-color: #3b82f6;
+}

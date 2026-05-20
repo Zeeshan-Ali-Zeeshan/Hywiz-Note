@@ -179,10 +179,7 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Template not found' });
     }
 
-    // Increment usage count if accessed by someone other than owner
-    if (template.userId._id.toString() !== req.userId) {
-      await template.incrementUsage();
-    }
+    // Usage tracking removed - all content is now in Yjs
 
     // Determine edit access
     let canEdit = false;
@@ -222,39 +219,27 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
-      title,
-      description,
-      category,
       tags,
       isPublic,
-      yjsUpdate // <-- Accept yjsUpdate
+      yjsUpdate // <-- Accept yjsUpdate (contains title and content)
     } = req.body;
-
-    if (!title) {
-      return res.status(400).json({ message: 'Title is required' });
-    }
 
     let yjsUpdateBuffer = undefined;
     if (yjsUpdate) {
       yjsUpdateBuffer = Buffer.from(yjsUpdate, 'base64');
     } else {
-      // Generate empty yjsUpdate if no yjsUpdate provided
+      // Generate empty yjsUpdate with empty title and content
       try {
         const Y = require('yjs');
         const ydoc = new Y.Doc();
-        const yXml = ydoc.getXmlFragment('prosemirror');
         
-        // Insert empty paragraph
-        const emptyParagraph = {
-          type: 'paragraph',
-          content: [
-            {
-              type: 'text',
-              text: ''
-            }
-          ]
-        };
-        yXml.insert(0, [emptyParagraph]);
+        // Initialize empty title
+        const yTitle = ydoc.getXmlFragment('title');
+        yTitle.insert(0, [{ type: 'paragraph', content: [{ type: 'text', text: 'Untitled Template' }] }]);
+        
+        // Initialize empty content
+        const yContent = ydoc.getXmlFragment('default');
+        yContent.insert(0, [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }]);
         
         yjsUpdateBuffer = Buffer.from(Y.encodeStateAsUpdate(ydoc));
       } catch (e) {
@@ -263,9 +248,7 @@ router.post('/', async (req, res) => {
     }
 
     const template = new Template({
-      title,
-      description: description || '',
-      category: category || 'general',
+      title: 'Untitled Template', // Fallback title
       tags: tags || [],
       userId: req.userId,
       isPublic: isPublic || false,
@@ -414,9 +397,7 @@ router.post('/:id/duplicate', async (req, res) => {
     }
 
     const duplicatedTemplate = new Template({
-      title: `${originalTemplate.title} (Copy)`,
-      description: originalTemplate.description,
-      category: originalTemplate.category,
+      title: `${originalTemplate.title} (Copy)`, // Fallback title
       tags: originalTemplate.tags,
       userId: req.userId,
       isPublic: false,
@@ -432,6 +413,90 @@ router.post('/:id/duplicate', async (req, res) => {
     res.status(201).json(populatedTemplate);
   } catch (error) {
     console.error('Error duplicating template:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// POST /api/templates/:id/create-note - Create note from template
+router.post('/:id/create-note', auth, async (req, res) => {
+  try {
+    const { notebookId, workspaceId } = req.body;
+    
+    const template = await Template.findOne({
+      _id: req.params.id,
+      isDeleted: false,
+      $or: [
+        { userId: req.userId },
+        { 'collaborators.userId': req.userId },
+        { isPublic: true }
+      ]
+    });
+
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found' });
+    }
+
+    // Get target notebook and workspace
+    const Note = require('../models/Note');
+    const Notebook = require('../models/Notebook');
+    
+    let targetNotebookId = notebookId;
+    let targetWorkspaceId = workspaceId;
+
+    if (notebookId) {
+      // Verify the notebook exists and user has access
+      const notebook = await Notebook.findOne({
+        _id: notebookId,
+        $or: [
+          { userId: req.userId },
+          { 'collaborators.userId': req.userId }
+        ]
+      });
+      
+      if (!notebook) {
+        return res.status(404).json({ message: 'Notebook not found or access denied' });
+      }
+      
+      targetNotebookId = notebook._id;
+      targetWorkspaceId = notebook.workspaceId;
+    } else {
+      // Use user's default notebook
+      const defaultNotebook = await Notebook.findOne({
+        userId: req.userId,
+        isDefault: true
+      });
+      
+      if (!defaultNotebook) {
+        return res.status(404).json({ message: 'Default notebook not found' });
+      }
+      
+      targetNotebookId = defaultNotebook._id;
+      targetWorkspaceId = defaultNotebook.workspaceId;
+    }
+
+    const newNote = new Note({
+      title: template.title,
+      content: '', // Content will be in YJS
+      plainTextContent: '',
+      userId: req.userId,
+      primaryNotebookId: targetNotebookId,
+      notebookIds: [targetNotebookId],
+      workspaceId: targetWorkspaceId,
+      tags: [...template.tags],
+      yjsUpdate: template.yjsUpdate // Copy YJS data from template
+    });
+
+    await newNote.save();
+    await newNote.populate('primaryNotebookId', 'name color');
+
+    // Update notebook note count
+    await Notebook.findByIdAndUpdate(targetNotebookId, {
+      $inc: { noteCount: 1 }
+    });
+
+    res.status(201).json(newNote);
+  } catch (error) {
+    console.error('Error creating note from template:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -723,8 +788,7 @@ router.get('/share/:shareLink', async (req, res) => {
       return res.status(410).json({ message: 'Share link has expired' });
     }
 
-    // Increment usage count
-    await template.incrementUsage();
+    // Usage tracking removed - all content is now in Yjs
 
     res.json(template);
   } catch (error) {
@@ -780,6 +844,26 @@ router.get('/stats', async (req, res) => {
   } catch (error) {
     console.error('Error fetching template stats:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Toggle shortcut status for a template
+router.patch('/:id/shortcut', auth, async (req, res) => {
+  try {
+    const template = await Template.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { isShortcut: req.body.isShortcut },
+      { new: true }
+    );
+
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found' });
+    }
+
+    res.json(template);
+  } catch (error) {
+    console.error('Toggle shortcut error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

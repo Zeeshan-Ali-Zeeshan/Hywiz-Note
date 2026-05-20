@@ -1,0 +1,1214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import UI enhancements */
+@import './components/ui/ui-enhancements.css';
+
+/* Custom CSS utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth scrolling - enabled for better user experience */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Text Editor Font Size Overrides */
+.prose {
+  font-size: 12px !important;
+  line-height: 1.65 !important;
+}
+
+/* Workspace Sidebar - Selected Notebook Glassy Effect */
+.notebook-selected {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.dark .notebook-selected {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.black .notebook-selected {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+:root[data-theme="black"] .notebook-selected {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+:root[data-theme="dark"] .notebook-selected {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Workspace Sidebar notebook icon theme-safe styles */
+:root[data-theme="black"] .workspace-notebook-icon {
+  background-color: #3a3a3a !important;
+  color: #d1d1d1 !important;
+}
+
+:root[data-theme="dark"] .workspace-notebook-icon {
+  background-color: rgba(55,65,81,0.8) !important; /* tailwind gray-700/80 */
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.prose p {
+  font-size: 12px !important;
+  line-height: 1.65 !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.prose h1 {
+  font-size: 1.5rem !important;
+  line-height: 1.3 !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.prose h2 {
+  font-size: 1.25rem !important;
+  line-height: 1.3 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.prose h3 {
+  font-size: 1.125rem !important;
+  line-height: 1.3 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.prose ul, .prose ol {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.prose li {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.prose blockquote {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.prose code {
+  font-size: 13px !important;
+}
+
+.prose pre {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+/* Rich Text Editor specific overrides */
+[contenteditable="true"] {
+  direction: ltr !important;
+  text-align: left !important;
+  font-size: 12px !important;
+  line-height: 1.65 !important;
+}
+
+[contenteditable="true"] p {
+  font-size: 12px !important;
+  line-height: 1.65 !important;
+}
+
+[contenteditable="true"] h1 {
+  font-size: 1.5rem !important;
+  line-height: 1.3 !important;
+  margin-bottom: 0.75rem !important;
+}
+
+[contenteditable="true"] h2 {
+  font-size: 1.25rem !important;
+  line-height: 1.3 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+[contenteditable="true"] h3 {
+  font-size: 1.125rem !important;
+  line-height: 1.3 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+body, html {
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'sans-serif';
+  background-color: var(--ev-bg, #f7f8fa);
+  color: var(--ev-text, #222);
+  overflow-x: hidden;
+}
+
+:root {
+  --ev-bg: #f7f8fa;
+  --ev-sidebar-bg: #f7f8fa;
+  --ev-sidebar-border: #e2e4e8;
+  --ev-sidebar-active: #e0e6ef;
+  --ev-sidebar-hover: #f0f2f5;
+  --ev-text: #222;
+  --ev-muted: #6b6b6b;
+  --ev-primary: #00a82d;
+  --ev-accent: #f5b800;
+}
+
+[data-theme="dark"] {
+  --ev-bg: #23272a;
+  --ev-sidebar-bg: #23272a;
+  --ev-sidebar-border: #2c2f34;
+  --ev-sidebar-active: #2a2d31;
+  --ev-sidebar-hover: #26292c;
+  --ev-text: #f7f8fa;
+  --ev-muted: #b0b0b0;
+  --ev-primary: #00a82d;
+  --ev-accent: #f5b800;
+}
+
+#root {
+  height: 100vh;
+}
+
+/* Hide scrollbar but allow scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  outline: none;
+  padding: 1rem;
+  min-height: 300px;
+  overflow-x: hidden;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Simple Checkbox Node - enhanced UI */
+.ProseMirror .simple-checkbox-node {
+  cursor: pointer;
+  user-select: none;
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+  line-height: 1;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+  padding: 2px;
+  border-radius: 3px;
+  color: #6b7280;
+}
+
+.ProseMirror .simple-checkbox-node:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  transform: scale(1.05);
+}
+
+.ProseMirror .simple-checkbox-node:active {
+  transform: scale(0.95);
+}
+
+/* Dark theme styles */
+:root[data-theme="dark"] .ProseMirror .simple-checkbox-node {
+  color: #9ca3af;
+}
+
+:root[data-theme="dark"] .ProseMirror .simple-checkbox-node:hover {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+/* Black theme styles */
+:root[data-theme="black"] .ProseMirror .simple-checkbox-node {
+  color: #9ca3af;
+}
+
+:root[data-theme="black"] .ProseMirror .simple-checkbox-node:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+/* Checked state styles */
+.ProseMirror .simple-checkbox-node.checked {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.ProseMirror .simple-checkbox-node.checked:hover {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+/* Dark theme checked styles */
+:root[data-theme="dark"] .ProseMirror .simple-checkbox-node.checked {
+  color: #34d399;
+}
+
+:root[data-theme="dark"] .ProseMirror .simple-checkbox-node.checked:hover {
+  background-color: rgba(52, 211, 153, 0.2);
+  color: #10b981;
+}
+
+/* Black theme checked styles */
+:root[data-theme="black"] .ProseMirror .simple-checkbox-node.checked {
+  color: #34d399;
+}
+
+:root[data-theme="black"] .ProseMirror .simple-checkbox-node.checked:hover {
+  background-color: rgba(52, 211, 153, 0.15);
+  color: #10b981;
+}
+
+/* Unchecked state styles */
+.ProseMirror .simple-checkbox-node.unchecked {
+  opacity: 0.8;
+}
+
+.ProseMirror .simple-checkbox-node.unchecked:hover {
+  opacity: 1;
+}
+
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] p {
+  margin: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  /* Minimal checklist appearance */
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0.25rem 0 !important;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem !important;
+  user-select: none;
+  background: transparent !important;
+  border: none !important;
+}
+
+.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+
+.ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: pointer;
+  appearance: auto !important; /* Use native checkbox UI */
+  background: transparent !important;
+  border: none !important;
+}
+
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div > p {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+/* Table styles */
+/* Dark theme table wrapper for horizontal scrolling */
+:root[data-theme="dark"] .ProseMirror .tableWrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1rem 0;
+  /* Enable smooth scrolling for better user experience */
+  scroll-behavior: smooth;
+  /* Remove contain property that can interfere with scrolling */
+  /* Ensure smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Add momentum scrolling for better feel */
+  scrollbar-width: thin;
+  scrollbar-color: #333 #181818;
+  /* Ensure proper scroll behavior */
+  will-change: scroll-position;
+  /* Add smooth momentum scrolling */
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: none;
+}
+
+/* Custom scrollbar styling for dark theme */
+:root[data-theme="dark"] .ProseMirror .tableWrapper::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+:root[data-theme="dark"] .ProseMirror .tableWrapper::-webkit-scrollbar-track {
+  background: #181818;
+  border-radius: 4px;
+}
+
+:root[data-theme="dark"] .ProseMirror .tableWrapper::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+:root[data-theme="dark"] .ProseMirror .tableWrapper::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+:root[data-theme="dark"] .ProseMirror table {
+  border-collapse: collapse;
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  display: table;
+  background: #181818;
+  color: #fff;
+  border: 1px solid #333;
+}
+
+:root[data-theme="dark"] .ProseMirror table td,
+:root[data-theme="dark"] .ProseMirror table th {
+  min-width: 1em;
+  border: 1.5px solid #333;
+  padding: 3px 5px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  background: #232323;
+  color: #fff;
+  white-space: nowrap; /* prevent wrapping so horizontal overflow appears */
+}
+
+.ProseMirror table th {
+  font-weight: bold;
+  text-align: left;
+}
+
+.ProseMirror table .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(200, 200, 255, 0.4);
+  pointer-events: none;
+}
+
+.ProseMirror table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: #adf;
+  pointer-events: none;
+}
+
+/* Responsive Design */
+@media (max-width: 1300px) {
+  .grid-cols-12 {
+    grid-template-columns: 1fr;
+  }
+  
+  .lg\:col-span-4 {
+    grid-column: span 1;
+  }
+  
+  .lg\:w-1\/3 {
+    width: 100%;
+  }
+  
+  .lg\:flex {
+    display: block;
+  }
+  
+  .hidden.lg\:flex {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .sm\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .lg\:grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .xl\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .xl\:grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .text-4xl {
+    font-size: 1.875rem;
+  }
+  
+  .text-2xl {
+    font-size: 1.5rem;
+  }
+  
+  .p-6 {
+    padding: 1rem;
+  }
+  
+  .space-x-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-left: 1rem;
+  }
+  
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1rem;
+  }
+}
+
+@media print {
+  .bg-gray-100.border-b {
+    display: none !important;
+  }
+  
+  .editor-toolbar {
+    display: none !important;
+  }
+}
+
+:root[data-theme="dark"] .ProseMirror, :root[data-theme="dark"] [contenteditable="true"] {
+  color: #fff !important;
+}
+
+:root[data-theme="dark"] .ProseMirror pre, :root[data-theme="dark"] .ProseMirror code {
+  background: #181818 !important;
+  color: #fff !important;
+  border-radius: 6px;
+}
+:root[data-theme="dark"] .ProseMirror table {
+  background: #181818 !important;
+  color: #fff !important;
+  border: 1px solid #333 !important;
+}
+:root[data-theme="dark"] .ProseMirror table th, :root[data-theme="dark"] .ProseMirror table td {
+  color: #fff;
+  border: 1.5px solid #333;
+}
+:root[data-theme="dark"] .ProseMirror blockquote {
+  background: #232323 !important;
+  color: #fff !important;
+  border-left: 4px solid #3b82f6 !important;
+  padding: 0.5em 1em;
+  border-radius: 4px;
+}
+:root[data-theme="dark"] .ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  appearance: auto !important;
+  border: none !important;
+  border-radius: 3px !important;
+  background: transparent !important;
+  padding: 0 !important;
+  accent-color: #fff !important;
+  cursor: pointer;
+}
+
+:root[data-theme="dark"] .ProseMirror mark[data-type="highlight"] {
+  background: #333 !important;
+  color: #fff !important;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+/* Removed override that forced background for spans with inline background-color in dark theme
+   to allow user-defined inline backgrounds (e.g., table cell coloring) to show correctly. */
+
+.ProseMirror hr {
+  border: none;
+  border-top: 2px solid #444;
+  margin: 1em 0;
+}
+:root[data-theme="dark"] .ProseMirror a {
+  color: #93c5fd; /* lighter blue for dark bg */
+  text-decoration: underline;
+}
+
+:root[data-theme="dark"] .ProseMirror ul, :root[data-theme="dark"] .ProseMirror ol {
+  color: #fff !important;
+}
+:root[data-theme="dark"] .ProseMirror li {
+  color: #fff !important;
+}
+:root[data-theme="dark"] .ProseMirror ul li::marker, :root[data-theme="dark"] .ProseMirror ol li::marker {
+  color: #fff !important;
+}
+
+/* Black theme editor (ProseMirror) parity */
+:root[data-theme="black"] .ProseMirror,
+:root[data-theme="black"] [contenteditable="true"] {
+  color: #fff !important;
+}
+:root[data-theme="black"] .ProseMirror pre,
+:root[data-theme="black"] .ProseMirror code {
+  background: #181818 !important;
+  color: #fff !important;
+  border-radius: 6px;
+}
+:root[data-theme="black"] .ProseMirror table {
+  background: #242424 !important;
+  color: #fff !important;
+  border: 1px solid #3a3a3a !important;
+}
+:root[data-theme="black"] .ProseMirror table th,
+:root[data-theme="black"] .ProseMirror table td {
+  color: #fff;
+  border: 1.5px solid #3a3a3a;
+}
+:root[data-theme="black"] .ProseMirror blockquote {
+  background: #2a2a2a !important;
+  color: #fff !important;
+  border-left: 4px solid #3b82f6 !important;
+  padding: 0.5em 1em;
+  border-radius: 4px;
+}
+:root[data-theme="black"] .ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  appearance: auto !important;
+  border: none !important;
+  border-radius: 3px !important;
+  background: transparent !important;
+  padding: 0 !important;
+  accent-color: #fff !important;
+  cursor: pointer;
+}
+:root[data-theme="black"] .ProseMirror mark[data-type="highlight"] {
+  background: #333 !important;
+  color: #fff !important;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+/* Removed override for black theme as well for the same reason. */
+:root[data-theme="black"] .ProseMirror a {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+:root[data-theme="black"] .ProseMirror ul,
+:root[data-theme="black"] .ProseMirror ol {
+  color: #fff !important;
+}
+:root[data-theme="black"] .ProseMirror li {
+  color: #fff !important;
+}
+:root[data-theme="black"] .ProseMirror ul li::marker,
+:root[data-theme="black"] .ProseMirror ol li::marker {
+  color: #fff !important;
+}
+
+/* Black theme toolbar containers and dropdowns */
+:root[data-theme="black"] .editor-toolbar {
+  background: #242424 !important;
+  border-color: #3a3a3a !important;
+}
+:root[data-theme="black"] .editor-toolbar .shadow-xl,
+:root[data-theme="black"] .editor-toolbar .shadow-lg,
+:root[data-theme="black"] .editor-toolbar .border,
+:root[data-theme="black"] .editor-toolbar [class*="border-gray-"] {
+  border-color: #3a3a3a !important;
+}
+:root[data-theme="black"] .editor-toolbar [class*="bg-white"],
+:root[data-theme="black"] .editor-toolbar .bg-white {
+  background: #242424 !important;
+  color: #fff !important;
+}
+:root[data-theme="black"] .editor-toolbar [class*="hover:bg-gray-100"]:hover,
+:root[data-theme="black"] .editor-toolbar .hover\:bg-gray-100:hover {
+  background: #2a2a2a !important;
+}
+/* Buttons and separators */
+:root[data-theme="black"] .editor-toolbar button,
+:root[data-theme="black"] .editor-toolbar [role="button"] {
+  color: #e5e5e5 !important;
+}
+:root[data-theme="black"] .editor-toolbar .w-px[class*="bg-"],
+:root[data-theme="black"] .editor-toolbar .bg-gray-200 { /* separators */
+  background: #3a3a3a !important;
+}
+/* Gray text overrides inside toolbar */
+:root[data-theme="black"] .editor-toolbar .text-gray-900 { color: #f5f5f5 !important; }
+:root[data-theme="black"] .editor-toolbar .text-gray-800 { color: #eaeaea !important; }
+:root[data-theme="black"] .editor-toolbar .text-gray-700 { color: #d6d6d6 !important; }
+:root[data-theme="black"] .editor-toolbar .text-gray-600 { color: #c2c2c2 !important; }
+:root[data-theme="black"] .editor-toolbar .text-gray-500 { color: #a3a3a3 !important; }
+/* Gray backgrounds inside toolbar */
+:root[data-theme="black"] .editor-toolbar .bg-gray-100 { background: #2f2f2f !important; }
+:root[data-theme="black"] .editor-toolbar .bg-gray-200 { background: #3a3a3a !important; }
+:root[data-theme="black"] .editor-toolbar .hover\:bg-gray-200:hover { background: #343434 !important; }
+/* Gray borders inside toolbar */
+:root[data-theme="black"] .editor-toolbar .border-gray-200,
+:root[data-theme="black"] .editor-toolbar .border-gray-300,
+:root[data-theme="black"] .editor-toolbar [class*="border-gray-"] {
+  border-color: #3a3a3a !important;
+}
+/* Dropdown panels inside toolbar */
+:root[data-theme="black"] .editor-toolbar .shadow-xl,
+:root[data-theme="black"] .editor-toolbar .shadow-lg {
+  --tw-shadow-color: rgba(0,0,0,0.6);
+}
+
+/* Removed forced white color for headings, strong, b, and label in ProseMirror/editor to allow color pickers and inline styles to work */
+/*
+.ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4, .ProseMirror h5, .ProseMirror h6, .ProseMirror strong, .ProseMirror b, .ProseMirror label, [contenteditable="true"] h1, [contenteditable="true"] h2, [contenteditable="true"] h3, [contenteditable="true"] h4, [contenteditable="true"] h5, [contenteditable="true"] h6, [contenteditable="true"] strong, [contenteditable="true"] b, [contenteditable="true"] label {
+    color: #fff !important;
+}
+*/
+
+:root[data-theme="dark"] select.appearance-none {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: #181818;
+  color: #fff;
+}
+:root[data-theme="dark"] select.appearance-none option {
+  background: #181818;
+  color: #fff;
+}
+
+/* Black theme CSS variables and styles */
+.black {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #1a1a1a;
+  --text-primary: #ffffff;
+  --text-secondary: #e5e5e5;
+  --text-muted: #a3a3a3;
+  --border-primary: #262626;
+  --border-secondary: #404040;
+  --accent-primary: #3b82f6;
+  --accent-secondary: #1d4ed8;
+}
+
+/* Black theme specific styles */
+.black .bg-white {
+  background-color: var(--bg-primary);
+}
+
+.black .bg-gray-50 {
+  background-color: var(--bg-secondary);
+}
+
+.black .bg-gray-100 {
+  background-color: var(--bg-tertiary);
+}
+
+.black .text-gray-900 {
+  color: var(--text-primary);
+}
+
+.black .text-gray-700 {
+  color: var(--text-secondary);
+}
+
+.black .text-gray-500 {
+  color: var(--text-muted);
+}
+
+.black .border-gray-200 {
+  border-color: var(--border-primary);
+}
+
+.black .border-gray-300 {
+  border-color: var(--border-secondary);
+}
+
+/* Black theme hover states */
+.black .hover\:bg-gray-50:hover {
+  background-color: var(--bg-secondary);
+}
+
+.black .hover\:bg-gray-100:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.black .hover\:border-gray-300:hover {
+  border-color: var(--border-secondary);
+}
+
+/* Black theme focus states */
+.black .focus\:ring-blue-500:focus {
+  --tw-ring-color: var(--accent-primary);
+}
+
+.black .focus\:border-blue-500:focus {
+  border-color: var(--accent-primary);
+}
+
+/* Black theme button styles */
+.black .bg-blue-600 {
+  background-color: var(--accent-primary);
+}
+
+.black .bg-blue-600:hover {
+  background-color: var(--accent-secondary);
+}
+
+/* Black theme input styles */
+.black input::placeholder {
+  color: var(--text-muted);
+}
+
+.black textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Black theme scrollbar */
+.black ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.black ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.black ::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+.black ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-secondary);
+}
+
+/* Black theme selection */
+.black ::selection {
+  background-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.black ::-moz-selection {
+  background-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+/* Black theme hard overrides for Tailwind utilities that introduce whiteness */
+:root[data-theme="black"] .bg-white { background-color: #242424 !important; }
+:root[data-theme="black"] .bg-white\/50 { background-color: #242424 !important; }
+:root[data-theme="black"] .bg-white\/60 { background-color: #242424 !important; }
+:root[data-theme="black"] .bg-white\/70 { background-color: #242424 !important; }
+:root[data-theme="black"] .bg-white\/80 { background-color: #242424 !important; }
+:root[data-theme="black"] .bg-white\/90 { background-color: #242424 !important; }
+:root[data-theme="black"] .hover\:bg-white\/50:hover { background-color: #2a2a2a !important; }
+:root[data-theme="black"] .hover\:bg-white\/60:hover { background-color: #2a2a2a !important; }
+:root[data-theme="black"] .hover\:bg-white\/70:hover { background-color: #2a2a2a !important; }
+:root[data-theme="black"] .hover\:bg-gray-100:hover { background-color: #2a2a2a !important; }
+:root[data-theme="black"] .bg-gray-50 { background-color: #242424 !important; }
+:root[data-theme="black"] .bg-gray-100 { background-color: #2a2a2a !important; }
+
+/* Workspace sidebar selected notebook background */
+:root[data-theme="black"] .bg-\[\#E6F6F9\] { background-color: #262626 !important; }
+
+/* Borders */
+:root[data-theme="black"] .border-gray-200 { border-color: #3a3a3a !important; }
+:root[data-theme="black"] .border-gray-300 { border-color: #3a3a3a !important; }
+:root[data-theme="black"] .border-gray-200\/60 { border-color: #3a3a3a !important; }
+:root[data-theme="black"] .border-gray-300\/60 { border-color: #3a3a3a !important; }
+
+/* Text colors */
+:root[data-theme="black"] .text-gray-900 { color: #f0f0f0 !important; }
+:root[data-theme="black"] .text-gray-800 { color: #e6e6e6 !important; }
+:root[data-theme="black"] .text-gray-700 { color: #d1d1d1 !important; }
+:root[data-theme="black"] .text-gray-600 { color: #bdbdbd !important; }
+
+:root[data-theme="black"] .calendar-sideblock { 
+  background: #242424 !important; 
+  border-color: #3a3a3a !important; 
+}
+:root[data-theme="black"] .calendar-sideblock *[class*="text-gray-700"],
+:root[data-theme="black"] .calendar-sideblock *[class*="text-gray-800"],
+:root[data-theme="black"] .calendar-sideblock *[class*="text-gray-900"] {
+  color: #e5e5e5 !important;
+}
+:root[data-theme="black"] .calendar-sideblock *[class*="hover:bg-white"]:hover {
+  background: #2a2a2a !important;
+}
+
+/* Black theme overrides for Dashboard filter dropdown */
+:root[data-theme="black"] .filter-dropdown .bg-sky-100,
+:root[data-theme="black"] .filter-dropdown .bg-violet-100,
+:root[data-theme="black"] .filter-dropdown .bg-yellow-100,
+:root[data-theme="black"] .filter-dropdown .bg-orange-100 {
+  background-color: #2a2a2a !important;
+}
+:root[data-theme="black"] .filter-dropdown select {
+  background-color: #2a2a2a !important;
+  border-color: #3a3a3a !important;
+  color: #ffffff !important;
+}
+:root[data-theme="black"] .filter-dropdown .border-gray-200,
+:root[data-theme="black"] .filter-dropdown .border-gray-300,
+:root[data-theme="black"] .filter-dropdown [class*="border-gray-"] {
+  border-color: #3a3a3a !important;
+}
+:root[data-theme="black"] .filter-dropdown .text-gray-700 {
+  color: #d1d1d1 !important;
+}
+
+/* Comprehensive button theme support for all themes */
+/* Light theme button enhancements */
+:root[data-theme="light"] button {
+  transition: all 0.2s ease;
+}
+
+:root[data-theme="light"] .bg-blue-600:hover {
+  background-color: #2563eb !important;
+}
+
+:root[data-theme="light"] .bg-gray-600:hover {
+  background-color: #4b5563 !important;
+}
+
+:root[data-theme="light"] .border-gray-300:hover {
+  background-color: #f9fafb !important;
+  border-color: #d1d5db !important;
+}
+
+/* Dark theme button enhancements */
+:root[data-theme="dark"] button {
+  transition: all 0.2s ease;
+}
+
+:root[data-theme="dark"] .bg-blue-600 {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .bg-blue-600:hover {
+  background-color: #2563eb !important;
+}
+
+:root[data-theme="dark"] .bg-gray-600 {
+  background-color: #4b5563 !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .bg-gray-600:hover {
+  background-color: #374151 !important;
+}
+
+:root[data-theme="dark"] .border-gray-600 {
+  border-color: #4b5563 !important;
+  color: #d1d5db !important;
+  background-color: transparent !important;
+}
+
+:root[data-theme="dark"] .border-gray-600:hover {
+  background-color: #374151 !important;
+  border-color: #6b7280 !important;
+}
+
+/* Black theme comprehensive button support */
+:root[data-theme="black"] button {
+  transition: all 0.2s ease;
+}
+
+:root[data-theme="black"] .bg-blue-600 {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+}
+
+:root[data-theme="black"] .bg-blue-600:hover {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+}
+
+:root[data-theme="black"] .bg-blue-700 {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
+}
+
+:root[data-theme="black"] .bg-blue-700:hover {
+  background-color: #1e40af !important;
+  border-color: #1e40af !important;
+}
+
+:root[data-theme="black"] .bg-gray-600 {
+  background-color: #404040 !important;
+  color: #ffffff !important;
+  border-color: #404040 !important;
+}
+
+:root[data-theme="black"] .bg-gray-600:hover {
+  background-color: #525252 !important;
+  border-color: #525252 !important;
+}
+
+:root[data-theme="black"] .bg-gray-700 {
+  background-color: #374151 !important;
+  color: #ffffff !important;
+  border-color: #374151 !important;
+}
+
+:root[data-theme="black"] .bg-gray-700:hover {
+  background-color: #4b5563 !important;
+  border-color: #4b5563 !important;
+}
+
+:root[data-theme="black"] .border-gray-300 {
+  border-color: #404040 !important;
+  color: #e5e5e5 !important;
+  background-color: transparent !important;
+}
+
+:root[data-theme="black"] .border-gray-300:hover {
+  background-color: #2a2a2a !important;
+  border-color: #525252 !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="black"] .border-gray-600 {
+  border-color: #404040 !important;
+  color: #e5e5e5 !important;
+  background-color: transparent !important;
+}
+
+:root[data-theme="black"] .border-gray-600:hover {
+  background-color: #2a2a2a !important;
+  border-color: #525252 !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="black"] .bg-transparent {
+  background-color: transparent !important;
+  color: #e5e5e5 !important;
+}
+
+:root[data-theme="black"] .bg-transparent:hover {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="black"] .bg-red-600 {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+}
+
+:root[data-theme="black"] .bg-red-600:hover {
+  background-color: #b91c1c !important;
+  border-color: #b91c1c !important;
+}
+
+:root[data-theme="black"] .bg-red-700 {
+  background-color: #b91c1c !important;
+  color: #ffffff !important;
+  border-color: #b91c1c !important;
+}
+
+:root[data-theme="black"] .bg-red-700:hover {
+  background-color: #991b1b !important;
+  border-color: #991b1b !important;
+}
+
+:root[data-theme="black"] .bg-green-600 {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+}
+
+:root[data-theme="black"] .bg-green-600:hover {
+  background-color: #15803d !important;
+  border-color: #15803d !important;
+}
+
+:root[data-theme="black"] .bg-green-700 {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+  border-color: #15803d !important;
+}
+
+:root[data-theme="black"] .bg-green-700:hover {
+  background-color: #166534 !important;
+  border-color: #166534 !important;
+}
+
+/* Button focus states for all themes - removed blue outline */
+:root[data-theme="light"] button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="black"] button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Button disabled states */
+button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Icon button enhancements */
+:root[data-theme="black"] .icon-button {
+  background-color: transparent !important;
+  color: #e5e5e5 !important;
+  border: none !important;
+  padding: 0.5rem !important;
+  border-radius: 0.375rem !important;
+  transition: all 0.2s ease !important;
+}
+
+:root[data-theme="black"] .icon-button:hover {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="black"] .icon-button:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #3b82f6 !important;
+}
+
+/* Toolbar button enhancements */
+:root[data-theme="black"] .toolbar-button {
+  background-color: transparent !important;
+  color: #e5e5e5 !important;
+  border: 1px solid transparent !important;
+  padding: 0.375rem !important;
+  border-radius: 0.25rem !important;
+  transition: all 0.2s ease !important;
+}
+
+:root[data-theme="black"] .toolbar-button:hover {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border-color: #404040 !important;
+}
+
+:root[data-theme="black"] .toolbar-button.active {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+}
+/* Simple Checklist Styles - Clean and minimal */
+.ProseMirror ul.simple-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror .simple-checklist-item-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ProseMirror .simple-checklist-label {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  height: 1.5rem;
+}
+
+.ProseMirror .simple-checklist-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: #3b82f6;
+  border-radius: 0.25rem;
+}
+
+.ProseMirror .simple-checklist-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ProseMirror .simple-checklist-content.checked-content {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.ProseMirror .simple-checklist-content p {
+  margin: 0;
+}
+
+/* Dark theme */
+:root[data-theme="dark"] .ProseMirror .simple-checklist-checkbox {
+  accent-color: #60a5fa;
+}
+
+/* Black theme */
+:root[data-theme="black"] .ProseMirror .simple-checklist-checkbox {
+  accent-color: #60a5fa;
+}
+ 
+ 

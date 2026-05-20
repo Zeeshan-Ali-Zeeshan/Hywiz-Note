@@ -51,30 +51,30 @@ export const SharedWithMe: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-black">
+    <div className="h-full flex flex-col bg-black max-w-[1920px] mx-auto w-full">
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4">
           {/* Header */}
-          <div className="bg-black border-b border-gray-800 p-6">
-            <h1 className="text-2xl font-semibold text-white mb-6">Shared with Me</h1>
+          <div className="bg-black border-b border-gray-800 p-4">
+            <h1 className="text-xl font-semibold text-white mb-4">Shared with Me</h1>
           </div>
 
           {/* Content */}
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-gray-900 rounded-lg p-6 animate-pulse">
-                  <div className="h-4 bg-gray-800 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-800 rounded w-1/2"></div>
+                <div key={i} className="bg-gray-900 rounded-lg p-4 animate-pulse">
+                  <div className="h-3 bg-gray-800 rounded w-3/4 mb-2"></div>
+                  <div className="h-2.5 bg-gray-800 rounded w-1/2"></div>
                 </div>
               ))}
             </div>
           ) : sharedItems.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex items-center justify-center h-48">
               <div className="text-center">
-                <Users className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">Nothing shared yet</h3>
-                <p className="text-gray-400">Notes and templates shared with you will show up here.</p>
+                <Users className="w-12 h-12 text-green-400 mx-auto mb-3" />
+                <h3 className="text-base font-medium text-white mb-2">Nothing shared yet</h3>
+                <p className="text-sm text-gray-400">Notes and templates shared with you will show up here.</p>
               </div>
             </div>
           ) : (
@@ -82,10 +82,10 @@ export const SharedWithMe: React.FC = () => {
               <table className="min-w-full divide-y divide-gray-800 bg-black table-fixed">
                 <thead>
                   <tr>
-                    <th className="px-6 py-3 w-1/3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Title</th>
-                    <th className="px-6 py-3 w-1/3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 w-1/3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Shared by</th>
-                    <th className="px-6 py-3 w-1/3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Shared date</th>
+                    <th className="px-4 py-2 w-1/3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Title</th>
+                    <th className="px-4 py-2 w-1/3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type</th>
+                    <th className="px-4 py-2 w-1/3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Shared by</th>
+                    <th className="px-4 py-2 w-1/3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Shared date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
@@ -93,7 +93,7 @@ export const SharedWithMe: React.FC = () => {
                     <tr key={item._id}>
                       {/* Title */}
                       <td
-                        className="px-6 py-4 whitespace-nowrap text-white cursor-pointer transition-all duration-200 ease-in-out group"
+                        className="px-4 py-3 whitespace-nowrap text-white cursor-pointer transition-all duration-200 ease-in-out group"
                         onClick={() => handleTitleClick(item)}
                       >
                         <span className="flex items-center">

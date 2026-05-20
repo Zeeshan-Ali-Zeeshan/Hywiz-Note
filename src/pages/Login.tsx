@@ -31,7 +31,7 @@ export const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#181818]">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white black:text-white mb-2">Welcome Back</h1>
           <p className="text-gray-600">Sign in to your Evernote account</p>
         </div>
 
@@ -94,12 +94,6 @@ export const Login: React.FC = () => {
             <Link to="/register" className="text-green-600 hover:text-green-700 font-medium">
               Sign up
             </Link>
-          </p>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-xs text-gray-500 text-center">
-            Demo credentials: admin@example.com / password123
           </p>
         </div>
       </div>
